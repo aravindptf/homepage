@@ -1,7 +1,7 @@
-import 'dart:ffi';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:homepage/add%20NEW%20employees.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,129 +16,146 @@ class _AddEmployeesState extends State<AddEmployees> {
   List<Map<String, dynamic>> employees = [];
   bool isLoading = true;
   String? _token;
-
-  void login(String token) {
-    setState(() {
-      _token = token;
-    });
-  }
+  String? _parlourId;
 
   @override
   void initState() {
     super.initState();
-    _loadToken().then((_) => fetchEmployees());
+    _initializeApp();
   }
 
+  // Initialize the app by loading token and parlourId
+  Future<void> _initializeApp() async {
+    await _loadToken();
+    await _loadParlourId(); // Load the parlour ID separately after token
+    if (_parlourId != null) {
+      await fetchEmployees(); // Fetch employees if parlourId is valid
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Parlour ID is not available. Please log in again.')),
+      );
+    }
+  }
+
+  // Load the authentication token from SharedPreferences
   Future<void> _loadToken() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('authToken');
-      if (token != null && token.isNotEmpty) {
+      
+      print('Retrieved authToken: $token');
+      
+      if (token?.isNotEmpty == true) {
         setState(() {
           _token = token;
         });
       } else {
-        throw Exception('No auth token found');
+        throw Exception('Authentication token is missing. Please log in.');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading authentication token: $e')),
+        SnackBar(content: Text('Error loading authentication data: $e')),
       );
     }
   }
 
- Future<void> fetchEmployees() async {
-  try {
-    // Retrieve the `parlourId` from SharedPreferences
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final parlourId = prefs.getInt('parlourId');
+  // Load the parlourId from SharedPreferences
+  Future<void> _loadParlourId() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final parlourId = prefs.getInt('parlourId'); // Fetch parlourId as integer
 
-    if (parlourId == null) {
-      throw Exception('Parlour ID not found. Please log in again.');
-    }
+      print('Retrieved parlourId: $parlourId');
 
-    if (_token == null) {
-      throw Exception('Authentication token is not available');
-    }
-
-    // Include parlourId in the API URL
-    final url = 'http://192.168.1.41:8080/employees/by-parlourId?parlourId=$parlourId';
-    
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {
-        'Authorization': 'Bearer $_token',
-      },
-    );
-
-    print("Response status: ${response.statusCode}");
-    print("Response body: ${response.body}");
-
-    if (response.statusCode == 200) {
-      if (response.body.isEmpty) {
+      if (parlourId != null) {
         setState(() {
-          employees = [];
-        });
-        return;
-      }
-
-      final data = json.decode(response.body);
-      if (data is List) {
-        setState(() {
-          employees = List<Map<String, dynamic>>.from(data);
+          _parlourId = parlourId.toString(); // Convert parlourId to string for consistency
         });
       } else {
-        throw Exception("Unexpected data format");
+        throw Exception('Parlour ID is missing.');
       }
-    } else if (response.statusCode == 403) {
-      throw Exception("Authentication failed. Please login again.");
-    } else {
-      throw Exception("Failed to load employees. Status code: ${response.statusCode}");
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading parlour ID: $e')),
+      );
     }
-  } catch (e) {
-    print("Error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
-    setState(() {
-      employees = [];
-    });
-  } finally {
-    setState(() {
-      isLoading = false;
-    });
   }
-}
 
-
-  Future<void> deleteEmployee(int id) async {
+  // Function to fetch employees based on parlourId
+  Future<void> fetchEmployees() async {
     try {
-      if (_token == null || _token!.isEmpty) {
-        throw Exception('Authentication token is not available');
+      if (_parlourId == null || _parlourId!.isEmpty) {
+        throw Exception("Parlour ID is missing.");
       }
 
-      final bool? confirmDelete = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Delete Employee"),
-            content: const Text("Are you sure you want to delete this employee?"),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text("No"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text("Yes"),
-              ),
-            ],
-          );
+      final url =
+          'http://192.168.1.49:8080/employees/by-parlourId?parlourId=$_parlourId'; // Add parlourId as query parameter
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token', // Ensure correct authentication token
         },
       );
 
+      // Checking Response Status
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        List<dynamic> jsonResponse = json.decode(response.body);
+        setState(() {
+          employees = jsonResponse.map((employee) {
+            return {
+              'id': employee['id'],
+              'employeeName': employee['employeeName'],
+              'isAvailable': employee['isAvailable'] ?? false,
+              'image': employee['image'],
+            };
+          }).toList();
+        });
+      } else {
+        throw Exception('Failed to load employees. Status: ${response.statusCode}. Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching employees: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching employees: $e')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false; // Stop loading once the request completes
+      });
+    }
+  }
+
+  // Delete an Employee
+  Future<void> deleteEmployee(int id) async {
+    try {
+      if (_token == null || _token!.isEmpty) {
+        throw Exception('Authentication token is unavailable.');
+      }
+
+      final url = 'http://192.168.1.38:8080/employees/delete/$id';
+      final confirmDelete = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text("Delete Employee"),
+          content: const Text("Are you sure you want to delete this employee?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text("No"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text("Yes"),
+            ),
+          ],
+        ),
+      );
+
       if (confirmDelete == true) {
-        // Changed the URL to match the employees endpoint
-        final url = 'http://192.168.1.41:8080/employees/delete/$id';
-        
         final response = await http.delete(
           Uri.parse(url),
           headers: {
@@ -147,32 +164,33 @@ class _AddEmployeesState extends State<AddEmployees> {
           },
         );
 
-        print("Delete response status: ${response.statusCode}");
-        print("Delete response body: ${response.body}");
-
         if (response.statusCode == 200) {
           setState(() {
-            employees.removeWhere((employee) => employee["id"] == id);
-          });  
+            employees.removeWhere((employee) => employee['id'] == id);
+          });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Employee deleted successfully!")),
+            const SnackBar(content: Text("Employee deleted successfully.")),
           );
         } else if (response.statusCode == 403) {
-          throw Exception("You don't have permission to delete this employee");
+          throw Exception("Permission denied to delete the employee.");
         } else {
-          throw Exception("Failed to delete employee (Status: ${response.statusCode})");
+          throw Exception("Failed to delete employee. (Status: ${response.statusCode})");
         }
       }
     } catch (e) {
-      print("Delete error: $e");
+      print("Error deleting employee: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error deleting employee: $e")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }
 
+  // Navigate to AddEmployee Page
   void navigateToAddEmployee() async {
-    final newEmployee = await Navigator.push(context, MaterialPageRoute(builder: (context) => AddEmployeePage()));
+    final newEmployee = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddEmployeePage()),
+    );
     if (newEmployee != null && newEmployee is Map<String, dynamic>) {
       setState(() {
         employees.add(newEmployee);
@@ -200,40 +218,25 @@ class _AddEmployeesState extends State<AddEmployees> {
                   itemCount: employees.length,
                   itemBuilder: (context, index) {
                     final employee = employees[index];
-                    final image = employee["image"];
+                    final image = employee['imageData'];
 
                     return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        leading: image != null && image.isNotEmpty
+                        leading: image != null
                             ? CircleAvatar(
-                                radius: 30,
-                                backgroundImage: image.startsWith('data:image/')
-                                    ? MemoryImage(base64Decode(image.split(',').last)) as ImageProvider
-                                    : NetworkImage(image),
-                                onBackgroundImageError: (exception, stackTrace) {
-                                  print("Error loading image: $exception");
-                                },
+                                backgroundImage: MemoryImage(image),
                               )
                             : const CircleAvatar(
-                                radius: 30,
-                                child: Icon(Icons.person, size: 30),
+                                child: Icon(Icons.person),
                               ),
-                        title: Text(
-                          employee["employeeName"] ?? "No Name",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Parlour ID: ${employee["parlourId"] ?? 'N/A'}"),
-                            Text("Availability: ${employee["isAvailable"] != null ? (employee["isAvailable"] ? "Available" : "Not Available") : "N/A"}"),
-                          ],
+                        title: Text(employee['employeeName'] ?? 'No Name'),
+                        subtitle: Text(
+                          "Availability: ${employee['isAvailable'] == true ? "Available" : "Not Available"}",
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => deleteEmployee(employee["id"]),
+                          onPressed: () => deleteEmployee(employee['id']),
                         ),
                       ),
                     );

@@ -2,18 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:homepage/add%20employees.dart';
 import 'package:homepage/add%20services.dart';
 import 'package:homepage/appoinments.dart';
-import 'package:homepage/profile.dart';
-
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
-
 class _HomePageState extends State<HomePage> {
-  int activeIndex = 0;
+  // int activeIndex = 0;
   int newAppointmentsCount = 3;
-  
-   // Example count for demonstration
 
   @override
   Widget build(BuildContext context) {
@@ -64,8 +59,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-
-
               SizedBox(height: 120),
 
               // Main Content Area
@@ -99,7 +92,7 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                      
+
                       // Quick Action Cards
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -110,25 +103,29 @@ class _HomePageState extends State<HomePage> {
                               'Add\nEmployees',
                               Icons.person_add,
                               Colors.purple,
-                              () => Navigator.push(context, 
-                                MaterialPageRoute(builder: (context) => AddEmployees())
-                              ),
+                              () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => AddEmployees())),
                             ),
                             _buildQuickActionCard(
                               'Manage\nAppointments',
                               Icons.calendar_today,
                               Colors.orange,
-                              () => Navigator.push(context,
-                                MaterialPageRoute(builder: (context) => AppointmentsPage())
-                              ),
+                              () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          AppointmentsPage())),
                             ),
                             _buildQuickActionCard(
                               'Add\nServices',
                               Icons.spa,
                               Colors.green,
-                              () => Navigator.push(context,
-                                MaterialPageRoute(builder: (context) => ServicesPage())
-                              ),
+                              () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ServicesPage())),
                             ),
                           ],
                         ),
@@ -164,7 +161,8 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   SizedBox(width: 10),
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Sarah Connor',
@@ -194,46 +192,46 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        margin: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 15,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: activeIndex,
-         onTap: (index) {
-  setState(() {
-    activeIndex = index;
-  });
-  if (index == 2) { // Assuming index 2 is for the Profile button
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ProfileScreen()),
-    );
-  }      
-},
+//       bottomNavigationBar: Container(
+//         margin: EdgeInsets.all(20),
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(30),
+//           boxShadow: [
+//             BoxShadow(
+//               color: Colors.black12,
+//               blurRadius: 15,
+//               offset: Offset(0, 5),
+//             ),
+//           ],
+//         ),
+//         child: BottomNavigationBar(
+//           currentIndex: activeIndex,
+//          onTap: (index) {
+//   setState(() {
+//     activeIndex = index;
+//   });
+//   if (index == 2) { // Assuming index 2 is for the Profile button
+//     Navigator.push(
+//       context,
+//       MaterialPageRoute(builder: (context) => ProfileScreen()),
+//     );
+//   }
+// },
 
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-           
-            BottomNavigationBarItem(icon: Icon(Icons.notifications_active), label: 'Notification'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-          ],
-        ),
-      ),
+//           backgroundColor: Colors.transparent,
+//           elevation: 0,
+//           type: BottomNavigationBarType.fixed,
+//           selectedItemColor: Colors.blue,
+//           unselectedItemColor: Colors.grey,
+//           items: [
+//             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+
+//             BottomNavigationBarItem(icon: Icon(Icons.notifications_active), label: 'Notification'),
+//             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+//           ],
+//         ),
+//       ),
     );
   }
 
@@ -282,7 +280,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildQuickActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildQuickActionCard(
+      String title, IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

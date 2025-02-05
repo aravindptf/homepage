@@ -46,7 +46,7 @@ class _ServiceListPageState extends State<ServicesPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.41:8080/Items/$services'); // Update this with your API endpoint
+    final url = Uri.parse('http://192.168.1.37:8080/Items/$services'); // Update this with your API endpoint
 
     try {
       print('Sending request with token: $_token');
@@ -94,7 +94,7 @@ class _ServiceListPageState extends State<ServicesPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.12:8080/Items/delete/$serviceId'); // Update this with your API endpoint
+    final url = Uri.parse('http://192.168.1.37:8080/Items/delete/$serviceId'); // Update this with your API endpoint
 
     try {
       print('Sending DELETE request with token: $_token');

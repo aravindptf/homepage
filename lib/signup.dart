@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,12 +7,13 @@ import 'package:homepage/homepage.dart';
 import 'package:homepage/map.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<bool> registerParlour(Map<String, dynamic> parlourData, XFile? image,
     XFile? coverImage, XFile? licenseImage) async {
   var request = http.MultipartRequest(
     'POST',
-    Uri.parse('http://192.168.1.12:8080/parlour/ParlourReg'),
+    Uri.parse('http://192.168.1.49:8080/api/parlour/ParlourReg'),
   );
 
   // Add fields to the request
@@ -54,10 +56,18 @@ Future<bool> registerParlour(Map<String, dynamic> parlourData, XFile? image,
   }
 
   // Send the request
-  var response = await request.send();
+var response = await request.send();
 
 if (response.statusCode == 200 && response.statusCode < 300) {
-  print('Registration successful');
+  String responseBody = await response.stream.bytesToString();
+  final parsedResponse = jsonDecode(responseBody);
+  int parlourId = parsedResponse['id'];  // Ensure 'id' matches backend response key
+  
+  // Save parlourId in SharedPreferences
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setInt('parlourId', parlourId);
+
+  print('Registration successful, parlour ID: $parlourId');
   return true;
 } else {
   String responseBody = await response.stream.bytesToString();
@@ -506,7 +516,7 @@ class _RegisterPageState extends State<Signup> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => Loginpage()),
+                                    builder: (context) => HomePage()),
                               );
                             } else {
                               // Show error message

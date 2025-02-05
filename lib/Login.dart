@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:homepage/assets.dart';
 import 'package:homepage/color.dart';
 import 'package:homepage/forgotpassword.dart';
@@ -26,16 +25,14 @@ class _DoorHubSignInPageState extends State<Loginpage> {
   bool _isPasswordVisible = false;
   final _shakeKey = GlobalKey<ShakeWidgetState>(); 
 
-Future<String> login(String emailOrPhone, String password) async {
-  final String url = 'http://192.168.1.41:8080/parlour/ParlourLogin'; // Replace with your backend API URL
+ Future<String> login(String emailOrPhone, String password) async {
+  final String url = 'http://192.168.1.49:8080/api/parlour/ParlourLogin'; // Replace with your backend API URL
   
-  // Prepare the request body
   final Map<String, dynamic> requestBody = {
     'email': emailOrPhone,
     'password': password,
   };
   
-  // Send POST request
   final response = await http.post(
     Uri.parse(url),
     headers: {'Content-Type': 'application/json'},
@@ -43,21 +40,22 @@ Future<String> login(String emailOrPhone, String password) async {
   );
 
   if (response.statusCode == 200) {
-    // Assuming the response contains a JSON object with a 'token' field
     final responseData = json.decode(response.body);
-    final token = responseData['token'];
-    final parlourId = responseData['id']; // Get the user ID from the response
+    final token = responseData['token'];  // Extract token
+    final int parlourId = responseData['parlour']['id']; // Extract parlour ID
 
-    // Store the token in SharedPreferences
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('authToken', token);
-     await prefs.setString('parlourId', parlourId); // Save the ID as a string
+    await prefs.setString('authToken', token); // Store token
+    await prefs.setInt('parlourId', parlourId); // Store parlour ID
+
+    print('Parlour ID: $parlourId'); 
 
     return 'Login successful';
   } else {
     return 'Login failed: ${response.body}';
   }
 }
+
 
   @override
   Widget build(BuildContext context) {

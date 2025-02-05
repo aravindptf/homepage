@@ -30,21 +30,23 @@ class _AddServicePageState extends State<AddServicePage> {
   @override
   void initState() {
     super.initState();
-    _loadToken(); // Load the token when the page is initialized
+    _loadToken();
   }
 
-  // Load the token from SharedPreferences
   Future<void> _loadToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _token = prefs.getString('authToken'); // Retrieve the token
+      _token = prefs.getString('authToken');
     });
   }
 
-  // Helper function to show error messages
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -74,7 +76,6 @@ class _AddServicePageState extends State<AddServicePage> {
       return false;
     }
 
-    // Validate time format (hh:mm:ss)
     final timePattern = RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$');
     if (!timePattern.hasMatch(timeController.text)) {
       _showError('Please enter a valid time in hh:mm:ss format');
@@ -99,18 +100,16 @@ class _AddServicePageState extends State<AddServicePage> {
   }
 
   Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
-    final url = Uri.parse('http://192.168.1.41:8080/Items/AddItems');
+    final url = Uri.parse('http://192.168.1.49:8080/Items/AddItems');
     if (_token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Token is not available. Please log in again.')));
+      _showError('Token is not available. Please log in again.');
       return;
     }
 
     try {
-      // Create a multipart request (only declare it once)
       var request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $_token';
 
-      // Add the fields to the request
       request.fields['itemName'] = serviceData['itemName'];
       request.fields['price'] = serviceData['price'];
       request.fields['serviceTime'] = serviceData['serviceTime'];
@@ -121,7 +120,6 @@ class _AddServicePageState extends State<AddServicePage> {
       request.fields['description'] = serviceData['description'];
       request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
 
-      // Add the image file if available
       if (_selectedImage != null) {
         request.files.add(await http.MultipartFile.fromPath(
           'itemImage',
@@ -130,130 +128,282 @@ class _AddServicePageState extends State<AddServicePage> {
         ));
       }
 
-      // Send the request
       final response = await request.send();
-
-      // Parse and handle the response
       final responseBody = await response.stream.bytesToString();
 
       if (response.statusCode == 201) {
-        print('Service added successfully');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Service added successfully')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Service added successfully'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       } else {
-        print('Failed to add service: $responseBody');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add service: $responseBody')),
-        );
+        _showError('Failed to add service: $responseBody');
       }
     } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showError('Error: $e');
     }
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? hint,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: TextStyle(color: Colors.grey.shade800),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.grey.shade600),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+          prefixIcon: Icon(icon, color: Color(0xFF1E88E5)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Color(0xFF1E88E5), width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Add Service'),
+        title: Text(
+          'Add New Service',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.black87),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            GestureDetector(
-              onTap: _pickImage,
-              child: CircleAvatar(
-                radius: 40,
-                backgroundImage: _selectedImage != null
-                    ? FileImage(_selectedImage!)
-                    : null,
-                child: _selectedImage == null
-                    ? const Icon(Icons.add_a_photo, size: 40)
-                    : null,
-              ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200,
+                        blurRadius: 15,
+                        spreadRadius: 5,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Hero(
+                        tag: 'serviceImage',
+                        child: GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Color(0xFF1E88E5),
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  spreadRadius: 5,
+                                  blurRadius: 7,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                              image: _selectedImage != null
+                                  ? DecorationImage(
+                                      image: FileImage(_selectedImage!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: _selectedImage == null
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_a_photo,
+                                        size: 40,
+                                        color: Color(0xFF1E88E5),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Add Photo',
+                                        style: TextStyle(
+                                          color: Color(0xFF1E88E5),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      _buildInputField(
+                        controller: nameController,
+                        label: 'Service Name',
+                        icon: Icons.spa,
+                        hint: 'Enter service name',
+                      ),
+                      _buildInputField(
+                        controller: priceController,
+                        label: 'Price',
+                        icon: Icons.attach_money,
+                        keyboardType: TextInputType.number,
+                        hint: 'Enter price',
+                      ),
+                      _buildInputField(
+                        controller: timeController,
+                        label: 'Duration',
+                        icon: Icons.access_time,
+                        hint: 'hh:mm:ss',
+                      ),
+                      _buildInputField(
+                        controller: descriptionController,
+                        label: 'Description',
+                        icon: Icons.description,
+                        hint: 'Enter service description',
+                      ),
+                      _buildInputField(
+                        controller: parlourIdController,
+                        label: 'Parlour ID',
+                        icon: Icons.store,
+                        keyboardType: TextInputType.number,
+                      ),
+                      _buildInputField(
+                        controller: categoryIdController,
+                        label: 'Category ID',
+                        icon: Icons.category,
+                        keyboardType: TextInputType.number,
+                      ),
+                      _buildInputField(
+                        controller: subcategoryController,
+                        label: 'Subcategory',
+                        icon: Icons.subdirectory_arrow_right,
+                      ),
+                      _buildInputField(
+                        controller: subsubcategoryController,
+                        label: 'Sub-subcategory',
+                        icon: Icons.subdirectory_arrow_right,
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          color: Colors.grey.shade50,
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: SwitchListTile(
+                          title: Text(
+                            'Available',
+                            style: TextStyle(
+                              color: Colors.grey.shade800,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          value: isAvailable,
+                          onChanged: (value) {
+                            setState(() {
+                              isAvailable = value;
+                            });
+                          },
+                          activeColor: Color(0xFF1E88E5),
+                          activeTrackColor: Colors.blue.shade100,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Container(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_validateFields()) {
+                              final serviceData = {
+                                'itemName': nameController.text,
+                                'price': priceController.text,
+                                'description': descriptionController.text,
+                                'parlourId': parlourIdController.text,
+                                'availability': isAvailable,
+                                'itemImage': _selectedImage?.path,
+                                'categoryId': categoryIdController.text,
+                                'subCategoryId': subcategoryController.text,
+                                'subSubCategoryId': subsubcategoryController.text,
+                                'serviceTime': timeController.text,
+                              };
+                              _saveServiceToBackend(serviceData);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF1E88E5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: const Text(
+                            'Save Service',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Item Name'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: priceController,
-              decoration: const InputDecoration(labelText: 'Price'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: timeController,
-              decoration: const InputDecoration(labelText: 'Time (hh:mm:ss)'),
-              keyboardType: TextInputType.datetime,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: parlourIdController,
-              decoration: const InputDecoration(labelText: 'Parlour ID'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: categoryIdController,
-              decoration: const InputDecoration(labelText: 'Category ID'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: subcategoryController,
-              decoration: const InputDecoration(labelText: 'Subcategory'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: subsubcategoryController,
-              decoration: const InputDecoration(labelText: 'Subsubcategory'),
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('Available'),
-              value: isAvailable,
-              onChanged: (value) {
-                setState(() {
-                  isAvailable = value;
-                });
-              },
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                if (_validateFields()) {
-                  final serviceData = {
-                    'itemName': nameController.text,
-                    'price': priceController.text,
-                    'description': descriptionController.text,
-                    'parlourId': parlourIdController.text,
-                    'availability': isAvailable,
-                    'itemImage': _selectedImage?.path,
-                    'categoryId': categoryIdController.text,
-                    'subCategoryId': subcategoryController.text,
-                    'subSubCategoryId': subsubcategoryController.text,
-                    'serviceTime': timeController.text, // Add this line
-                  };
-
-                  _saveServiceToBackend(serviceData);
-                }
-              },
-              child: const Text('Save Service'),
-            ),
-          ],
+          ),
         ),
       ),
     );
