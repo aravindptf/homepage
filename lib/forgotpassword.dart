@@ -54,7 +54,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.39:8080/parlour/forgot_password');
+    final url = Uri.parse('http://192.168.1.39:8080/api/parlour/forgot_password');
     final headers = {
       'Content-Type': 'application/json',
       'Cookie': 'JSESSIONID=AF31C56D8757F89F493003A6F83291BD', // Replace with your actual session ID

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:homepage/Login.dart';
+import 'package:homepage/homecontent.dart';
 import 'package:homepage/homepage.dart';
 import 'package:homepage/map.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,7 +14,7 @@ Future<bool> registerParlour(Map<String, dynamic> parlourData, XFile? image,
     XFile? coverImage, XFile? licenseImage) async {
   var request = http.MultipartRequest(
     'POST',
-    Uri.parse('http://192.168.1.49:8080/api/parlour/ParlourReg'),
+    Uri.parse('http://192.168.1.150:8080/api/parlour/ParlourReg'),
   );
 
   // Add fields to the request
@@ -516,7 +517,7 @@ class _RegisterPageState extends State<Signup> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => HomePage()),
+                                    builder: (context) => Homecontent()),
                               );
                             } else {
                               // Show error message

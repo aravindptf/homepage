@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:homepage/assets.dart';
 import 'package:homepage/color.dart';
 import 'package:homepage/forgotpassword.dart';
-import 'package:homepage/homepage.dart';
+import 'package:homepage/homecontent.dart';
 import 'package:homepage/signup.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart'; // Import the http package
@@ -26,7 +26,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
   final _shakeKey = GlobalKey<ShakeWidgetState>(); 
 
  Future<String> login(String emailOrPhone, String password) async {
-  final String url = 'http://192.168.1.49:8080/api/parlour/ParlourLogin'; // Replace with your backend API URL
+  final String url = 'http://192.168.1.150:8080/api/parlour/ParlourLogin'; // Replace with your backend API URL
   
   final Map<String, dynamic> requestBody = {
     'email': emailOrPhone,
@@ -198,7 +198,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
                     if (result == 'Login successful') {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => HomePage()),
+                        MaterialPageRoute(builder: (context) => Homecontent()),
                       );
                     } else {
                       // Show an error message if login fails
@@ -237,7 +237,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => HomePage()),
+                    MaterialPageRoute(builder: (context) => Homecontent()),
                   );
                 },
                 text: 'Continue as a Guest',

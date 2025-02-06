@@ -30,7 +30,7 @@ class _ParlourDetailsPageState extends State<ParlourDetailsPage> {
 
   Future<Parlour> fetchParlourDetails(int parlourId) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.49:8080/api/parlour/id?id=$parlourId'),
+      Uri.parse('http://192.168.1.150:8080/api/parlour/id?id=$parlourId'),
       headers: {
         'Cookie': 'JSESSIONID=ACF91BC7C0410372B5E2DF5E978E186B',
       },
@@ -54,7 +54,7 @@ class _ParlourDetailsPageState extends State<ParlourDetailsPage> {
   final token = await getAuthToken(); // Get the token
   print('Token: $token'); // Debugging line
 
-  final response = await http.post(
+  final response = await http.put(
     Uri.parse('http://192.168.1.49:8080/api/parlour/update'),
     headers: {
       'Content-Type': 'application/json',
@@ -238,6 +238,7 @@ class _ParlourDetailsPageState extends State<ParlourDetailsPage> {
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
+                            
                             return 'Please enter phone number';
                           }
                           return null;

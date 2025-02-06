@@ -68,56 +68,60 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     return true;
   }
 
-  Future<void> _saveEmployeeToBackend() async {
-    if (!_validateFields()) return;
+ Future<void> _saveEmployeeToBackend() async {
+  if (!_validateFields()) return;
 
-    final url = Uri.parse('http://192.168.1.49:8080/api/employees/addEmployee');
-    if (_token == null) {
-      _showError('Token is not available. Please log in again.');
-      return;
-    }
-
-    try {
-      var request = http.MultipartRequest('POST', url);
-      request.headers['Authorization'] = 'Bearer $_token';
-
-      request.fields['employeeName'] = _nameController.text;
-      request.fields['parlourId'] = _parlourIdController.text;
-      request.fields['phone'] = _phoneController.text;
-
-      if (_selectedImage != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'employeeImage',
-          _selectedImage!.path,
-          filename: 'employeeImage.jpg',
-        ));
-      }
-
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Employee added successfully'),
-              ],
-            ),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        _resetForm();
-      } else {
-        _showError('Failed to add employee: $responseBody');
-      }
-    } catch (e) {
-      _showError('Error: $e');
-    }
+  final url = Uri.parse('http://192.168.1.150:8080/api/employees/addEmployee');
+  if (_token == null) {
+    _showError('Token is not available. Please log in again.');
+    return;
   }
+
+  try {
+    var request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $_token';
+
+    request.fields['employeeName'] = _nameController.text;
+    request.fields['parlourId'] = _parlourIdController.text;
+    request.fields['phone'] = _phoneController.text;
+
+    if (_selectedImage != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'employeeImage',
+        _selectedImage!.path,
+        filename: 'employeeImage.jpg',
+      ));
+    }
+
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+
+    print('Response Code: ${response.statusCode}');
+    print('Response Body: $responseBody');  // Debugging
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Employee added successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _resetForm();
+    } else {
+      _showError('Failed to add employee: $responseBody');
+    }
+  } catch (e) {
+    _showError('Error: $e');
+  }
+}
+
 
   void _resetForm() {
     setState(() {

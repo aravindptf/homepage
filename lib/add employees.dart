@@ -92,7 +92,7 @@ class _AddEmployeesState extends State<AddEmployees> {
       }
 
       final url =
-          'http://192.168.1.49:8080/employees/by-parlourId?parlourId=$_parlourId'; // Add parlourId as query parameter
+          'http://192.168.1.150:8080/api/employees/by-parlourId?parlourId=$_parlourId'; // Add parlourId as query parameter
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -109,7 +109,7 @@ class _AddEmployeesState extends State<AddEmployees> {
             return {
               'id': employee['id'],
               'employeeName': employee['employeeName'],
-              'isAvailable': employee['isAvailable'] ?? false,
+              'isAvailable': employee['isAvailable'] ?? true,
               'image': employee['image'],
             };
           }).toList();
@@ -218,7 +218,7 @@ class _AddEmployeesState extends State<AddEmployees> {
                   itemCount: employees.length,
                   itemBuilder: (context, index) {
                     final employee = employees[index];
-                    final image = employee['imageData'];
+                    final image = employee['image'];
 
                     return Card(
                       margin: const EdgeInsets.all(8.0),

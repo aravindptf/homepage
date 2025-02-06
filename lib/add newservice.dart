@@ -100,7 +100,7 @@ class _AddServicePageState extends State<AddServicePage> {
   }
 
   Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
-    final url = Uri.parse('http://192.168.1.49:8080/Items/AddItems');
+    final url = Uri.parse('http://192.168.1.150:8080/api/Items/AddItems');
     if (_token == null) {
       _showError('Token is not available. Please log in again.');
       return;
