@@ -26,7 +26,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
   final _shakeKey = GlobalKey<ShakeWidgetState>(); 
 
  Future<String> login(String emailOrPhone, String password) async {
-  final String url = 'http://192.168.1.150:8080/api/parlour/ParlourLogin'; // Replace with your backend API URL
+  final String url = 'http://192.168.1.18:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
   
   final Map<String, dynamic> requestBody = {
     'email': emailOrPhone,
@@ -43,6 +43,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
     final responseData = json.decode(response.body);
     final token = responseData['token'];  // Extract token
     final int parlourId = responseData['parlour']['id']; // Extract parlour ID
+    
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('authToken', token); // Store token

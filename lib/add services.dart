@@ -5,124 +5,141 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ServicesPage extends StatefulWidget {
-  const ServicesPage({super.key});
-
   @override
-  State<ServicesPage> createState() => _ServiceListPageState();
+  _ServicesPageState createState() => _ServicesPageState();
 }
 
-class _ServiceListPageState extends State<ServicesPage> {
-  List<dynamic> services = [];
-  String? _token;
-  bool _isLoading = true; // A flag to show loading state
+class _ServicesPageState extends State<ServicesPage> {
+  List<dynamic> items = [];
+  String? _parlourId;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadToken(); // Load the token when the page is initialized
-  }
-
-  // Load the token from SharedPreferences
-  Future<void> _loadToken() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _token = prefs.getString('authToken');
-    });
-    print('Loaded token: $_token');  // Debugging line
-    if (_token != null) {
-      await _fetchServices(); // Fetch services after token is loaded
-    }
-  }
-
-  // Fetch services from the backend API
-  Future<void> _fetchServices() async {
-    if (_token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token is not available. Please log in again.')),
-      );
+  // Retrieve the parlourId from SharedPreferences (Handle it as an int)
+  Future<void> getParlourId() async {
+    final prefs = await SharedPreferences.getInstance();
+    dynamic fetchedParlourId = prefs.get('parlourId');
+    
+    if (fetchedParlourId != null) {
+      // Ensure parlourId is treated as a String even if it's stored as an int
+      if (fetchedParlourId is int) {
+        _parlourId = fetchedParlourId.toString();  // Convert to String
+      } else if (fetchedParlourId is String) {
+        _parlourId = fetchedParlourId;
+      }
+      
       setState(() {
-        _isLoading = false; // Stop loading if no token is found
+        print('Retrieved Parlour ID: $_parlourId');
       });
-      return;
+    } else {
+      print('Parlour ID not found in SharedPreferences');
     }
+  }
 
-    final url = Uri.parse('http://192.168.1.37:8080/Items/$services'); // Update this with your API endpoint
+  // Fetch services by parlourId (without token for authorization)
+ Future<void> fetchServicesByParlourId() async {
+  if (_parlourId == null) {
+    print("Parlour ID is null. Please set the parlour ID.");
+    return;
+  }
 
-    try {
-      print('Sending request with token: $_token');
+  final prefs = await SharedPreferences.getInstance();
+  String? jsessionId = prefs.getString('JSESSIONID');
 
-      final response = await http.get(
-        url,
-        headers: {
-          'Authorization': 'Bearer $_token',
-          'Content-Type': 'application/json',
-        },
-      );
+  if (jsessionId == null) {
+    print("JSESSIONID is null. Please make sure the user is logged in.");
+    return;
+  }
 
-      print('Fetch Services Response: ${response.statusCode}, ${response.body}');
+  final url = Uri.parse('http://192.168.1.18:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
+  final headers = {
+    'Content-Type': 'application/json',
+    'Cookie': 'JSESSIONID=$jsessionId',
+  };
 
-      if (response.statusCode == 200) {
-        final List<dynamic> fetchedServices = json.decode(response.body);
+  print('Sending request to: $url');
+  print('With headers: $headers');
+
+  try {
+    final response = await http.get(url, headers: headers);
+    print('Response Status: ${response.statusCode}');
+    print('Response Body: ${response.body}');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        List<dynamic> jsonResponse = json.decode(response.body);
         setState(() {
-          services = fetchedServices.map((service) {
-            service['id'] = (service['id'] is int) ? service['id'] : 0;
-            return service;
+          items = jsonResponse.map((service) {
+            return {
+              'id': service['id'],
+              'itemName': service['itemName'], // Changed field from 'serviceName' to 'itemName'
+              'price': service['price'],
+              'categoryName': service['categoryName'],
+              'subCategoryName': service['subCategoryName'],
+              'subSubCategoryName': service['subSubCategoryName'], // Added 'subSubCategoryName'
+              'availability': service['availability'],
+              'serviceTime': service['serviceTime'],
+            };
           }).toList();
         });
       } else {
+        print('Failed to load services. Status: ${response.statusCode}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch services: ${response.body}')),
+          SnackBar(content: Text('Failed to load services. Status: ${response.statusCode}')),
         );
       }
     } catch (e) {
+      print('Error fetching services: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('Error fetching services: $e')),
       );
-    } finally {
-      setState(() {
-        _isLoading = false; // Stop loading after the request completes
-      });
     }
   }
 
-  // Delete service by ID
-  Future<void> _deleteService(int serviceId) async {
-    if (_token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token is not available. Please log in again.')),
-      );
+  // Delete a service by serviceId (with token for authorization)
+  Future<void> deleteService(int serviceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('authToken'); // Get the token for authorization
+
+    if (token == null) {
+      print("Token is null. Please log in first.");
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.37:8080/Items/delete/$serviceId'); // Update this with your API endpoint
+    final url = Uri.parse('http://192.168.1.18:8086/api/services/delete?serviceId=$serviceId');
+    final headers = {
+      'Authorization': 'Bearer $token',  // Add token for the delete request
+      'Content-Type': 'application/json',
+    };
 
     try {
-      print('Sending DELETE request with token: $_token');
+      final response = await http.delete(url, headers: headers);
 
-      final response = await http.delete(
-        url,
-        headers: {
-          'Authorization': 'Bearer $_token',
-        },
-      );
-
-      print('Delete Service Response: ${response.statusCode}, ${response.body}');
-
-      if (response.statusCode == 200) {
-        setState(() {
-          services.removeWhere((service) => service['id'] == serviceId);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Service deleted successfully')),
-        );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print('Service deleted successfully');
+        fetchServicesByParlourId(); // Refresh the list after deleting
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete service: ${response.body}')),
-        );
+        print('Failed to delete service. Status code: ${response.statusCode}');
       }
     } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  // Use async initialization safely in initState
+  @override
+  void initState() {
+    super.initState();
+    _initializeData(); // Initialize parlourId
+  }
+
+  // A new function to initialize parlourId
+  Future<void> _initializeData() async {
+    try {
+      await getParlourId();
+      if (_parlourId != null) {
+        await fetchServicesByParlourId(); // Fetch services after parlourId is available
+      }
+    } catch (e) {
+      print('Error during initialization: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('Error during initialization: $e')),
       );
     }
   }
@@ -131,42 +148,60 @@ class _ServiceListPageState extends State<ServicesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Service List'),
+        title: Text("Services List"),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // Show loading indicator while fetching services
-          : services.isEmpty
-              ? const Center(child: Text('No services available.')) // Show message if no services found
-              : ListView.builder(
-                  itemCount: services.length,
-                  itemBuilder: (context, index) {
-                    final service = services[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      child: ListTile(
-                        title: Text(service['itemName']),
-                        subtitle: Text('Price: \$${service['price']}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            _deleteService(service['id']);
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                 floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        // Navigate to the AddServicePage
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AddServicePage()),
-        );
-      },
-      child: const Icon(Icons.add),
-      tooltip: 'Add New Service',
-    ),
-  );
-}   
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: items.isEmpty
+            ? Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  var item = items[index];
+
+                  // Extract the relevant data from the response
+                  var itemName = item['itemName']; // Changed field name from 'serviceName' to 'itemName'
+                  var price = item['price'];
+                  var categoryName = item['categoryName'];
+                  var subCategoryName = item['subCategoryName'];
+                  var subSubCategoryName = item['subSubCategoryName']; // Added subSubCategoryName
+                  var availability = item['availability'] ? "Available" : "Not Available";
+                  var serviceTime = item['serviceTime'];
+
+                  return ListTile(
+                    title: Text(itemName ?? 'No Name'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Category: $categoryName'),
+                        Text('SubCategory: $subCategoryName'),
+                        Text('Sub SubCategory: $subSubCategoryName'), // Added display of subSubCategoryName
+                        Text('Price: \$${price.toString()}'),
+                        Text('Service Time: $serviceTime'),
+                        Text('Availability: $availability'),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        deleteService(item['id']);  // Delete service using the token
+                      },
+                    ),
+                  );
+                },
+              ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to the AddNewServicePage when clicked
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddServicePage()),
+          );
+        },
+        child: Icon(Icons.add),
+        tooltip: 'Add New Service',
+      ),
+    );
   }
+}

@@ -92,7 +92,7 @@ class _AddEmployeesState extends State<AddEmployees> {
       }
 
       final url =
-          'http://192.168.1.150:8080/api/employees/by-parlourId?parlourId=$_parlourId'; // Add parlourId as query parameter
+          'http://192.168.1.18:8086/api/employees/by-parlourId?parlourId=$_parlourId'; // Add parlourId as query parameter
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -136,7 +136,7 @@ class _AddEmployeesState extends State<AddEmployees> {
         throw Exception('Authentication token is unavailable.');
       }
 
-      final url = 'http://192.168.1.38:8080/employees/delete/$id';
+      final url = 'http://192.168.1.18:8086/api/employees/delete?employeeId=$id';
       final confirmDelete = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(

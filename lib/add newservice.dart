@@ -77,7 +77,7 @@ class _AddServicePageState extends State<AddServicePage> {
     }
 
     final timePattern = RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$');
-    if (!timePattern.hasMatch(timeController.text)) {
+    if (!timePattern.hasMatch(timeController.text)) { 
       _showError('Please enter a valid time in hh:mm:ss format');
       return false;
     }
@@ -100,7 +100,7 @@ class _AddServicePageState extends State<AddServicePage> {
   }
 
   Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
-    final url = Uri.parse('http://192.168.1.150:8080/api/Items/AddItems');
+    final url = Uri.parse('http://192.168.1.18:8086/api/Items/AddItems');
     if (_token == null) {
       _showError('Token is not available. Please log in again.');
       return;
@@ -110,15 +110,15 @@ class _AddServicePageState extends State<AddServicePage> {
       var request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $_token';
 
-      request.fields['itemName'] = serviceData['itemName'];
-      request.fields['price'] = serviceData['price'];
-      request.fields['serviceTime'] = serviceData['serviceTime'];
-      request.fields['categoryId'] = serviceData['categoryId'];
-      request.fields['subCategoryId'] = serviceData['subCategoryId'];
-      request.fields['subSubCategoryId'] = serviceData['subSubCategoryId'];
-      request.fields['parlourId'] = serviceData['parlourId'];
-      request.fields['description'] = serviceData['description'];
-      request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
+     request.fields['itemName'] = serviceData['itemName'];
+request.fields['price'] = serviceData['price']; // Ensure this is a string
+request.fields['serviceTime'] = serviceData['serviceTime']; // Ensure this is in the correct format
+request.fields['categoryId'] = serviceData['categoryId']; // Ensure this is a string
+request.fields['subCategoryId'] = serviceData['subCategoryId']; // Ensure this is a string
+request.fields['subSubCategoryId'] = serviceData['subSubCategoryId']; // Ensure this is a string
+request.fields['parlourId'] = serviceData['parlourId']; // Ensure this is a string
+request.fields['description'] = serviceData['description'];
+request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
 
       if (_selectedImage != null) {
         request.files.add(await http.MultipartFile.fromPath(
