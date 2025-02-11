@@ -1,278 +1,237 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:homepage/add%20employees.dart';
-import 'package:homepage/add%20services.dart';
 import 'package:homepage/appoinments.dart';
+import 'package:homepage/add%20services.dart';
+import 'package:homepage/color.dart';  // Assuming this file contains your color constants
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
+
 class _HomePageState extends State<HomePage> {
-  // int activeIndex = 0;
-  int newAppointmentsCount = 3;
+  int activeEmployees = 0;  // To store active employee count
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEmployeeCount();  // Fetch the initial employee count when the page loads
+  }
+
+  // Fetch the employee count from the server
+  Future<void> _fetchEmployeeCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('authToken');
+      final parlourId = prefs.getInt('parlourId')?.toString();
+      
+      final url = 'http://192.168.1.11:8086/api/employees/by-parlourId?parlourId=$parlourId';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> employees = json.decode(response.body);
+        setState(() {
+          activeEmployees = employees.length;
+        });
+      } else {
+        throw Exception('Failed to fetch employee count');
+      }
+    } catch (e) {
+      _showError('Error fetching employee count: $e');
+    }
+  }
+
+  // Show error messages using SnackBar
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red.shade400),
+    );
+  }
+
+  // Navigate to AddEmployeePage and update the employee count when a new employee is added
+  Future<void> _navigateAndAddEmployee() async {
+    final updatedEmployeeCount = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (context) => AddEmployees()),
+    );
+
+    if (updatedEmployeeCount != null) {
+      setState(() {
+        activeEmployees = updatedEmployeeCount;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.blue.shade800, Colors.blue.shade400],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header Section
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hello, Beautiful!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          'Manage your salon with ease',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white,
-                      child: Icon(Icons.person, size: 35, color: Colors.blue)
-                    ),
-                  ],
+      backgroundColor: AppColors.kBackground,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Premium Header Section
+            Container(
+              padding: EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 30),
+              decoration: BoxDecoration(
+                color: AppColors.kPrimary,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
-
-              SizedBox(height: 120),
-
-              // Main Content Area
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: Column(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Quick Actions',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome Back',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.8),
                             ),
-                            TextButton(
-                              onPressed: () {},
-                              child: Text('See All'),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Beauty Salon',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
                             ),
                           ],
                         ),
-                      ),
-
-                      // Quick Action Cards
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildQuickActionCard(
-                              'Add\nEmployees',
-                              Icons.person_add,
-                              Colors.purple,
-                              () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => AddEmployees())),
-                            ),
-                            _buildQuickActionCard(
-                              'Manage\nAppointments',
-                              Icons.calendar_today,
-                              Colors.orange,
-                              () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          AppointmentsPage())),
-                            ),
-                            _buildQuickActionCard(
-                              'Add\nServices',
-                              Icons.spa,
-                              Colors.green,
-                              () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => ServicesPage())),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(height: 20),
-
-                      // Upcoming Appointments Preview
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Container(
-                          padding: EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Next Appointment',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: Colors.blue.shade200,
-                                    child: Text('SC'),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Sarah Connor',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Hair Styling - 2:30 PM',
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        child: Icon(
+                          Icons.notifications_none_rounded,
+                          color: AppColors.kPrimary,
+                          size: 28,
                         ),
                       ),
                     ],
                   ),
-                ),
+                  SizedBox(height: 30),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStat('Today\'s\nAppointments', '12'),
+                        Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
+                        _buildStat('Active\nEmployees', '$activeEmployees'),
+                        Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
+                        _buildStat('Total\nServices', '24'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
-//       bottomNavigationBar: Container(
-//         margin: EdgeInsets.all(20),
-//         decoration: BoxDecoration(
-//           color: Colors.white,
-//           borderRadius: BorderRadius.circular(30),
-//           boxShadow: [
-//             BoxShadow(
-//               color: Colors.black12,
-//               blurRadius: 15,
-//               offset: Offset(0, 5),
-//             ),
-//           ],
-//         ),
-//         child: BottomNavigationBar(
-//           currentIndex: activeIndex,
-//          onTap: (index) {
-//   setState(() {
-//     activeIndex = index;
-//   });
-//   if (index == 2) { // Assuming index 2 is for the Profile button
-//     Navigator.push(
-//       context,
-//       MaterialPageRoute(builder: (context) => ProfileScreen()),
-//     );
-//   }
-// },
-
-//           backgroundColor: Colors.transparent,
-//           elevation: 0,
-//           type: BottomNavigationBarType.fixed,
-//           selectedItemColor: Colors.blue,
-//           unselectedItemColor: Colors.grey,
-//           items: [
-//             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-
-//             BottomNavigationBarItem(icon: Icon(Icons.notifications_active), label: 'Notification'),
-//             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-//           ],
-//         ),
-//       ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: Colors.white24,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white38,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: Colors.white),
             ),
-            SizedBox(width: 15),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+
+            // Quick Actions Section
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick Actions',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildPremiumActionCard(
+                        'Add\nEmployees',
+                        Icons.person_add_rounded,
+                        _navigateAndAddEmployee,
+                      ),
+                      _buildPremiumActionCard(
+                        'Manage\nAppointments',
+                        Icons.calendar_today_rounded,
+                        () => Navigator.push(context, MaterialPageRoute(builder: (context) => AppointmentsPage())),
+                      ),
+                      _buildPremiumActionCard(
+                        'Add\nServices',
+                        Icons.spa_rounded,
+                        () => Navigator.push(context, MaterialPageRoute(builder: (context) => ServicesPage())),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+
+            // Recent Activity Section
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recent Activity',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  _buildActivityCard(
+                    'New Appointment',
+                    'Sarah Johnson - Hair Styling',
+                    '10:30 AM',
+                    Icons.access_time_rounded,
+                  ),
+                  SizedBox(height: 15),
+                  _buildActivityCard(
+                    'Service Completed',
+                    'Emma Davis - Manicure',
+                    '09:15 AM',
+                    Icons.check_circle_outline_rounded,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -280,34 +239,137 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildQuickActionCard(
-      String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildStat(String title, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColors.kPrimary,
+          ),
+        ),
+        SizedBox(height: 5),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPremiumActionCard(String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.27,
         padding: EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 30),
-            SizedBox(height: 10),
+            Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.kPrimary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: AppColors.kPrimary,
+                size: 24,
+              ),
+            ),
+            SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: color.withOpacity(0.8),
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActivityCard(String title, String subtitle, String time, IconData icon) {
+    return Container(
+      padding: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.kPrimary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.kPrimary,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -14,7 +14,7 @@ Future<bool> registerParlour(Map<String, dynamic> parlourData, XFile? image,
     XFile? coverImage, XFile? licenseImage) async {
   var request = http.MultipartRequest(
     'POST',
-    Uri.parse('http://192.168.1.18:8086/api/parlour/ParlourReg'),
+    Uri.parse('http://192.168.1.11:8086/api/parlour/ParlourReg'),
   );
 
   // Add fields to the request

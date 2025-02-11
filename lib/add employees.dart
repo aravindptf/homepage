@@ -24,84 +24,71 @@ class _AddEmployeesState extends State<AddEmployees> {
     _initializeApp();
   }
 
-  // Initialize the app by loading token and parlourId
   Future<void> _initializeApp() async {
     await _loadToken();
-    await _loadParlourId(); // Load the parlour ID separately after token
+    await _loadParlourId();
     if (_parlourId != null) {
-      await fetchEmployees(); // Fetch employees if parlourId is valid
+      await fetchEmployees();
     } else {
       setState(() {
         isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Parlour ID is not available. Please log in again.')),
+        const SnackBar(content: Text('Parlour ID is not available. Please log in again.')),
       );
     }
   }
 
-  // Load the authentication token from SharedPreferences
   Future<void> _loadToken() async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('authToken');
-      
-      print('Retrieved authToken: $token');
-      
-      if (token?.isNotEmpty == true) {
-        setState(() {
-          _token = token;
-        });
-      } else {
-        throw Exception('Authentication token is missing. Please log in.');
-      }
-    } catch (e) {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+
+    print('Retrieved authToken: $token');
+
+    if (token?.isNotEmpty == true) {
+      setState(() {
+        _token = token;
+      });
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading authentication data: $e')),
+        const SnackBar(content: Text('Authentication token is missing. Please log in.')),
       );
     }
   }
 
-  // Load the parlourId from SharedPreferences
   Future<void> _loadParlourId() async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final parlourId = prefs.getInt('parlourId'); // Fetch parlourId as integer
+    final prefs = await SharedPreferences.getInstance();
+    final parlourId = prefs.getInt('parlourId');
 
-      print('Retrieved parlourId: $parlourId');
+    print('Retrieved parlourId: $parlourId');
 
-      if (parlourId != null) {
-        setState(() {
-          _parlourId = parlourId.toString(); // Convert parlourId to string for consistency
-        });
-      } else {
-        throw Exception('Parlour ID is missing.');
-      }
-    } catch (e) {
+    if (parlourId != null) {
+      setState(() {
+        _parlourId = parlourId.toString();
+      });
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading parlour ID: $e')),
+        const SnackBar(content: Text('Parlour ID is missing.')),
       );
     }
   }
 
-  // Function to fetch employees based on parlourId
+  /// **Fetch Employees and Decode Base64 Images**
   Future<void> fetchEmployees() async {
     try {
       if (_parlourId == null || _parlourId!.isEmpty) {
         throw Exception("Parlour ID is missing.");
       }
 
-      final url =
-          'http://192.168.1.18:8086/api/employees/by-parlourId?parlourId=$_parlourId'; // Add parlourId as query parameter
+      final url = 'http://192.168.1.11:8086/api/employees/by-parlourId?parlourId=$_parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_token', // Ensure correct authentication token
+          'Authorization': 'Bearer $_token',
         },
       );
 
-      // Checking Response Status
       if (response.statusCode >= 200 && response.statusCode < 300) {
         List<dynamic> jsonResponse = json.decode(response.body);
         setState(() {
@@ -110,7 +97,7 @@ class _AddEmployeesState extends State<AddEmployees> {
               'id': employee['id'],
               'employeeName': employee['employeeName'],
               'isAvailable': employee['isAvailable'] ?? true,
-              'image': employee['image'],
+              'image': decodeBase64Image(employee['image']), // Decode image here
             };
           }).toList();
         });
@@ -124,19 +111,29 @@ class _AddEmployeesState extends State<AddEmployees> {
       );
     } finally {
       setState(() {
-        isLoading = false; // Stop loading once the request completes
+        isLoading = false;
       });
     }
   }
 
-  // Delete an Employee
+  /// **Decode Base64 Image to Uint8List**
+  Uint8List? decodeBase64Image(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return null;
+    try {
+      return base64Decode(base64String);
+    } catch (e) {
+      print('Error decoding base64 image: $e');
+      return null;
+    }
+  }
+
   Future<void> deleteEmployee(int id) async {
     try {
       if (_token == null || _token!.isEmpty) {
         throw Exception('Authentication token is unavailable.');
       }
 
-      final url = 'http://192.168.1.18:8086/api/employees/delete?employeeId=$id';
+      final url = 'http://192.168.1.11:8086/api/employees/delete?employeeId=$id';
       final confirmDelete = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
@@ -171,8 +168,6 @@ class _AddEmployeesState extends State<AddEmployees> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Employee deleted successfully.")),
           );
-        } else if (response.statusCode == 403) {
-          throw Exception("Permission denied to delete the employee.");
         } else {
           throw Exception("Failed to delete employee. (Status: ${response.statusCode})");
         }
@@ -185,7 +180,6 @@ class _AddEmployeesState extends State<AddEmployees> {
     }
   }
 
-  // Navigate to AddEmployee Page
   void navigateToAddEmployee() async {
     final newEmployee = await Navigator.push(
       context,
@@ -218,14 +212,14 @@ class _AddEmployeesState extends State<AddEmployees> {
                   itemCount: employees.length,
                   itemBuilder: (context, index) {
                     final employee = employees[index];
-                    final image = employee['image'];
+                    final Uint8List? imageBytes = employee['Image']; // Decoded image
 
                     return Card(
                       margin: const EdgeInsets.all(8.0),
                       child: ListTile(
-                        leading: image != null
+                        leading: imageBytes != null
                             ? CircleAvatar(
-                                backgroundImage: MemoryImage(image),
+                                backgroundImage: MemoryImage(imageBytes),
                               )
                             : const CircleAvatar(
                                 child: Icon(Icons.person),
