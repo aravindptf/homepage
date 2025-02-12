@@ -80,7 +80,7 @@ class _AddEmployeesState extends State<AddEmployees> {
         throw Exception("Parlour ID is missing.");
       }
 
-      final url = 'http://192.168.1.11:8086/api/employees/by-parlourId?parlourId=$_parlourId';
+      final url = 'http://192.168.1.4:8086/api/employees/by-parlourId?parlourId=$_parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -133,7 +133,7 @@ class _AddEmployeesState extends State<AddEmployees> {
         throw Exception('Authentication token is unavailable.');
       }
 
-      final url = 'http://192.168.1.11:8086/api/employees/delete?employeeId=$id';
+      final url = 'http://192.168.1.4:8086/api/employees/delete?employeeId=$id';
       final confirmDelete = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
@@ -141,7 +141,7 @@ class _AddEmployeesState extends State<AddEmployees> {
           content: const Text("Are you sure you want to delete this employee?"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.of(context).pop(false), 
               child: const Text("No"),
             ),
             TextButton(

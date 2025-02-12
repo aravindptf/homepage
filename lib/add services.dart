@@ -40,7 +40,7 @@ class _ServicesPageState extends State<ServicesPage> {
   Future<void> fetchServicesByParlourId() async {
     if (_parlourId == null) return;
 
-    final url = Uri.parse('http://192.168.1.11:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
+    final url = Uri.parse('http://192.168.1.4:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
     final headers = {'Content-Type': 'application/json'};
 
     try {
@@ -59,7 +59,7 @@ class _ServicesPageState extends State<ServicesPage> {
               'subSubCategoryName': service['subSubCategoryName'] ?? 'No SubSubCategory',
               'availability': service['availability'] ?? false,
               'serviceTime': service['serviceTime'] ?? '00:00:00',
-              'image': service['itemImage'],
+              'image': service['itemImage'], // Use correct key
             };
           }).toList();
         });
@@ -71,12 +71,15 @@ class _ServicesPageState extends State<ServicesPage> {
     }
   }
 
+  /// **Decode Base64 Image to Uint8List**
   Uint8List? decodeBase64Image(String? base64String) {
     if (base64String == null || base64String.isEmpty) return null;
     try {
+      // Remove the "data:image/png;base64," prefix if present
       if (base64String.contains(",")) {
         base64String = base64String.split(",").last;
       }
+      // Normalize Base64 string and decode
       return base64Decode(base64.normalize(base64String));
     } catch (e) {
       print('Error decoding base64 image: $e');
@@ -84,131 +87,159 @@ class _ServicesPageState extends State<ServicesPage> {
     }
   }
 
-  Future<void> deleteService(String itemId) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('authToken');
+  // **Delete Service**
+// **Delete Service**
+Future<void> deleteService(String itemId) async {
+  // Fetch the token from SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  String? token = prefs.getString('authToken');
 
-    if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You are not logged in!')),
-      );
-      return;
-    }
-
-    final url = Uri.parse('http://192.168.1.11:8086/api/Items/delete?itemId=$itemId');
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-
-    try {
-      final response = await http.delete(url, headers: headers);
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Service deleted successfully!')),
-        );
-        fetchServicesByParlourId();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting service')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting service: $e')),
-      );
-    }
+  // Check if the token exists
+  if (token == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('You are not logged in!')),
+    );
+    return;
   }
 
-  Future<void> showConfirmationDialog(String itemId) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Are you sure?'),
-          content: Text('Do you want to delete this service?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel', style: TextStyle(color: Colors.black54)),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: Text('Delete', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                deleteService(itemId);
-              },
-            ),
-          ],
-        );
-      },
+  final url = Uri.parse('http://192.168.1.4:8086/api/Items/delete?itemId=$itemId');
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token', // Include the token in the header
+  };
+
+  try {
+    final response = await http.delete(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Item deleted successfully!')),
+      );
+      
+      // Refresh the list by fetching the updated data from the server
+      await fetchServicesByParlourId(); // Reload items from server
+
+      // Optional: Pop the current screen if you want to navigate away immediately
+      // Navigator.pop(context); // Uncomment this if you want to pop the screen after deletion
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting item')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error deleting service: $e')),
     );
   }
+}
+
+
+// **Confirmation Dialog before Delete**
+Future<void> showConfirmationDialog(String itemId) async {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Are you sure?'),
+        content: Text('Do you want to delete this service?'),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+          ),
+          TextButton(
+            child: Text('Delete'),
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+              deleteService(itemId); // Proceed to delete the service
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: Text("Services List", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.black87),
-      ),
-      body: items.isEmpty
-          ? Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5)))
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                var item = items[index];
-                Uint8List? imageBytes = decodeBase64Image(item['image']);
+      appBar: AppBar(title: Text("Services List")),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: items.isEmpty
+            ? Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  var item = items[index];
 
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 3,
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(10),
-                    leading: Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey.shade200,
-                      ),
-                      child: imageBytes != null
+                  var itemName = item['itemName'];
+                  var price = item['price'];
+                  var categoryName = item['categoryName'];
+                  var subCategoryName = item['subCategoryName'];
+                  var subSubCategoryName = item['subSubCategoryName'];
+                  var availability = item['availability'] ? "Available" : "Not Available";
+                  var serviceTime = item['serviceTime'];
+                  Uint8List? imageBytes = decodeBase64Image(item['image']);
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                    child: ListTile(
+                      leading: imageBytes != null
                           ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.memory(imageBytes, fit: BoxFit.cover),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.memory(
+                                imageBytes,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              ),
                             )
-                          : Icon(Icons.image, size: 40, color: Colors.grey.shade600),
+                          : Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.image, size: 40, color: Colors.grey[600]),
+                            ),
+                      title: Text(itemName),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Category: $categoryName'),
+                          Text('SubCategory: $subCategoryName'),
+                          Text('Sub SubCategory: $subSubCategoryName'),
+                          Text('Price: \$${price.toString()}'),
+                          Text('Service Time: $serviceTime'),
+                          Text('Availability: $availability'),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          // Show the confirmation dialog
+                          showConfirmationDialog(item['id'].toString());
+                        },
+                      ),
                     ),
-                    title: Text(item['itemName'], style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Category: ${item['categoryName']}'),
-                        Text('SubCategory: ${item['subCategoryName']}'),
-                        Text('Price: ₹${item['price']}'),
-                        Text('Availability: ${item['availability'] ? "Available" : "Not Available"}',
-                            style: TextStyle(color: item['availability'] ? Colors.green : Colors.red)),
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => showConfirmationDialog(item['id'].toString()),
-                    ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddServicePage())),
-        backgroundColor: Color(0xFF1E88E5),
-        child: Icon(Icons.add, color: Colors.white, size: 28),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddServicePage()),
+          );
+        },
+        child: Icon(Icons.add),
+        tooltip: 'Add New Service',
       ),
     );
   }

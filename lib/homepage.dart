@@ -7,6 +7,7 @@ import 'package:homepage/color.dart';  // Assuming this file contains your color
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -14,11 +15,38 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int activeEmployees = 0;  // To store active employee count
+  int totalServices = 0;    // To store total service count
 
   @override
   void initState() {
     super.initState();
     _fetchEmployeeCount();  // Fetch the initial employee count when the page loads
+    _fetchServiceCount();
+  }
+
+  Future<void> _fetchServiceCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('authToken');
+      final parlourId = prefs.getInt('parlourId')?.toString();
+      
+      final url = 'http://192.168.1.4:8086/api/Items/itemByParlourId?parlourId=$parlourId';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> Services = json.decode(response.body);
+        setState(() {
+          totalServices = Services.length;
+        });
+      } else {
+        throw Exception('Failed to fetch Services count');
+      }
+    } catch (e) {
+      _showError('Error fetching Services count: $e');
+    }
   }
 
   // Fetch the employee count from the server
@@ -28,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
       
-      final url = 'http://192.168.1.11:8086/api/employees/by-parlourId?parlourId=$parlourId';
+      final url = 'http://192.168.1.4:8086/api/employees/by-parlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
@@ -64,6 +92,21 @@ class _HomePageState extends State<HomePage> {
     if (updatedEmployeeCount != null) {
       setState(() {
         activeEmployees = updatedEmployeeCount;
+      });
+    }
+  }
+
+  // Navigate to ServicesPage and update the total number of services
+  Future<void> _navigateAndFetchServices() async {
+    final updatedServiceCount = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (context) => ServicesPage()),
+    );
+
+    if (updatedServiceCount != null) {
+      setState(() {
+        totalServices = updatedServiceCount;
+        
       });
     }
   }
@@ -155,7 +198,7 @@ class _HomePageState extends State<HomePage> {
                         Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
                         _buildStat('Active\nEmployees', '$activeEmployees'),
                         Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
-                        _buildStat('Total\nServices', '24'),
+                        _buildStat('Total\nServices', '$totalServices'),
                       ],
                     ),
                   ),
@@ -194,7 +237,7 @@ class _HomePageState extends State<HomePage> {
                       _buildPremiumActionCard(
                         'Add\nServices',
                         Icons.spa_rounded,
-                        () => Navigator.push(context, MaterialPageRoute(builder: (context) => ServicesPage())),
+                        _navigateAndFetchServices,
                       ),
                     ],
                   ),
