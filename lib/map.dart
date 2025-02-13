@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google_maps; // Alias for google_maps
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:latlong2/latlong.dart' as latlong; // Alias for latlong2
@@ -54,6 +53,7 @@ class _MappageState extends State<Mappage> {
     }
 
     Position position = await Geolocator.getCurrentPosition(
+        // ignore: deprecated_member_use
         desiredAccuracy: LocationAccuracy.high);
     setState(() {
       _tappedLocation = latlong.LatLng(position.latitude, position.longitude); // Use latlong.LatLng
@@ -82,7 +82,7 @@ class _MappageState extends State<Mappage> {
 
       if (response.statusCode == 200) {
         print("Location fetched successfully: ${response.body}");
-        final data = jsonDecode(response.body); // parse response if JSON
+        jsonDecode(response.body); // parse response if JSON
         // handle your response data here
       } else {
         print("Failed to fetch location. Status Code: ${response.statusCode}");
@@ -308,8 +308,8 @@ class _MappageState extends State<Mappage> {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         // You can still get the location name if needed, but it's not necessary for your requirement
-        final data = json.decode(response.body);
-        String locationName = data['display_name'];
+        json.decode(response.body);
+        // String locationName = data['display_name'];
 
         setState(() {
           _tappedLocation = point;

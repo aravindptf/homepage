@@ -40,7 +40,7 @@ class _ServicesPageState extends State<ServicesPage> {
   Future<void> fetchServicesByParlourId() async {
     if (_parlourId == null) return;
 
-    final url = Uri.parse('http://192.168.1.4:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
+    final url = Uri.parse('http://192.168.1.26:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
     final headers = {'Content-Type': 'application/json'};
 
     try {
@@ -102,7 +102,7 @@ Future<void> deleteService(String itemId) async {
     return;
   }
 
-  final url = Uri.parse('http://192.168.1.4:8086/api/Items/delete?itemId=$itemId');
+  final url = Uri.parse('http://192.168.1.26:8086/api/Items/delete?itemId=$itemId');
   final headers = {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer $token', // Include the token in the header

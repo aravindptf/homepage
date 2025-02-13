@@ -74,6 +74,7 @@ class FrontScreenState extends State<FrontScreen> {
             effect: WormEffect(
               dotHeight: 8,
               dotWidth: 8,
+              // ignore: deprecated_member_use
               dotColor: AppColors.kPrimary.withOpacity(0.2),
             ),
             onDotClicked: (index) {

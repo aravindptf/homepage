@@ -30,9 +30,7 @@ class _AddEmployeesState extends State<AddEmployees> {
     if (_parlourId != null) {
       await fetchEmployees();
     } else {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Parlour ID is not available. Please log in again.')),
       );
@@ -43,12 +41,8 @@ class _AddEmployeesState extends State<AddEmployees> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('authToken');
 
-    print('Retrieved authToken: $token');
-
     if (token?.isNotEmpty == true) {
-      setState(() {
-        _token = token;
-      });
+      setState(() => _token = token);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Authentication token is missing. Please log in.')),
@@ -60,12 +54,8 @@ class _AddEmployeesState extends State<AddEmployees> {
     final prefs = await SharedPreferences.getInstance();
     final parlourId = prefs.getInt('parlourId');
 
-    print('Retrieved parlourId: $parlourId');
-
     if (parlourId != null) {
-      setState(() {
-        _parlourId = parlourId.toString();
-      });
+      setState(() => _parlourId = parlourId.toString());
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Parlour ID is missing.')),
@@ -73,14 +63,13 @@ class _AddEmployeesState extends State<AddEmployees> {
     }
   }
 
-  /// **Fetch Employees and Decode Base64 Images**
   Future<void> fetchEmployees() async {
     try {
       if (_parlourId == null || _parlourId!.isEmpty) {
         throw Exception("Parlour ID is missing.");
       }
 
-      final url = 'http://192.168.1.4:8086/api/employees/by-parlourId?parlourId=$_parlourId';
+      final url = 'http://192.168.1.26:8086/api/employees/by-parlourId?parlourId=$_parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -97,32 +86,27 @@ class _AddEmployeesState extends State<AddEmployees> {
               'id': employee['id'],
               'employeeName': employee['employeeName'],
               'isAvailable': employee['isAvailable'] ?? true,
-              'image': decodeBase64Image(employee['image']), // Decode image here
+              'image': decodeBase64Image(employee['image']),
             };
           }).toList();
         });
       } else {
-        throw Exception('Failed to load employees. Status: ${response.statusCode}. Body: ${response.body}');
+        throw Exception('Failed to load employees.');
       }
     } catch (e) {
-      print('Error fetching employees: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching employees: $e')),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
-  /// **Decode Base64 Image to Uint8List**
   Uint8List? decodeBase64Image(String? base64String) {
     if (base64String == null || base64String.isEmpty) return null;
     try {
       return base64Decode(base64String);
     } catch (e) {
-      print('Error decoding base64 image: $e');
       return null;
     }
   }
@@ -133,7 +117,7 @@ class _AddEmployeesState extends State<AddEmployees> {
         throw Exception('Authentication token is unavailable.');
       }
 
-      final url = 'http://192.168.1.4:8086/api/employees/delete?employeeId=$id';
+      final url = 'http://192.168.1.26:8086/api/employees/delete?employeeId=$id';
       final confirmDelete = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
@@ -141,7 +125,7 @@ class _AddEmployeesState extends State<AddEmployees> {
           content: const Text("Are you sure you want to delete this employee?"),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false), 
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text("No"),
             ),
             TextButton(
@@ -169,11 +153,10 @@ class _AddEmployeesState extends State<AddEmployees> {
             const SnackBar(content: Text("Employee deleted successfully.")),
           );
         } else {
-          throw Exception("Failed to delete employee. (Status: ${response.statusCode})");
+          throw Exception("Failed to delete employee.");
         }
       }
     } catch (e) {
-      print("Error deleting employee: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -196,7 +179,7 @@ class _AddEmployeesState extends State<AddEmployees> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Employees"),
+        title: const Text("Employees", style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -207,26 +190,32 @@ class _AddEmployeesState extends State<AddEmployees> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : employees.isEmpty
-              ? const Center(child: Text("No employees added."))
+              ? const Center(
+                  child: Text("No employees added.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                )
               : ListView.builder(
+                  padding: const EdgeInsets.all(10),
                   itemCount: employees.length,
                   itemBuilder: (context, index) {
                     final employee = employees[index];
-                    final Uint8List? imageBytes = employee['Image']; // Decoded image
+                    final Uint8List? imageBytes = employee['image'];
 
                     return Card(
-                      margin: const EdgeInsets.all(8.0),
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
                       child: ListTile(
-                        leading: imageBytes != null
-                            ? CircleAvatar(
-                                backgroundImage: MemoryImage(imageBytes),
-                              )
-                            : const CircleAvatar(
-                                child: Icon(Icons.person),
-                              ),
-                        title: Text(employee['employeeName'] ?? 'No Name'),
+                        contentPadding: const EdgeInsets.all(10),
+                        leading: CircleAvatar(
+                          radius: 30,
+                          backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
+                          child: imageBytes == null ? const Icon(Icons.person, size: 30) : null,
+                        ),
+                        title: Text(employee['employeeName'] ?? 'No Name',
+                            style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(
                           "Availability: ${employee['isAvailable'] == true ? "Available" : "Not Available"}",
+                          style: TextStyle(color: employee['isAvailable'] ? Colors.green : Colors.red),
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
@@ -239,6 +228,7 @@ class _AddEmployeesState extends State<AddEmployees> {
       floatingActionButton: FloatingActionButton(
         onPressed: navigateToAddEmployee,
         child: const Icon(Icons.add),
+        backgroundColor: Colors.purple,
       ),
     );
   }

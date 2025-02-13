@@ -33,6 +33,7 @@ class EditProfileScreen extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: 'Enter your Parlour name',
                         filled: true,
+                        // ignore: deprecated_member_use
                         fillColor: Colors.deepPurple.shade800.withOpacity(0.05),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16.0 * 1.5, vertical: 16.0),
@@ -49,6 +50,7 @@ class EditProfileScreen extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: 'Enter your email',
                         filled: true,
+                        // ignore: deprecated_member_use
                         fillColor: Colors.deepPurple.shade800.withOpacity(0.05),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16.0 * 1.5, vertical: 16.0),
@@ -65,6 +67,7 @@ class EditProfileScreen extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: 'Enter your phone number',
                         filled: true,
+                        // ignore: deprecated_member_use
                         fillColor: Colors.deepPurple.shade800.withOpacity(0.05),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16.0 * 1.5, vertical: 16.0),
@@ -87,6 +90,7 @@ class EditProfileScreen extends StatelessWidget {
                           size: 20,
                         ),
                         filled: true,
+                        // ignore: deprecated_member_use
                         fillColor:  Colors.deepPurple.shade800.withOpacity(0.05),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16.0 * 1.5, vertical: 16.0),
@@ -103,6 +107,7 @@ class EditProfileScreen extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: "New Password",
                         filled: true,
+                        // ignore: deprecated_member_use
                         fillColor: Colors.deepPurple.shade800.withOpacity(0.05),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16.0 * 1.5, vertical: 16.0),
@@ -176,6 +181,7 @@ class ProfilePic extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
+          // ignore: deprecated_member_use
           color: Colors.deepPurple.shade800.withOpacity(0.08),
         ),
       ),

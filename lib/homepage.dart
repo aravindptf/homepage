@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
       
-      final url = 'http://192.168.1.4:8086/api/Items/itemByParlourId?parlourId=$parlourId';
+      final url = 'http://192.168.1.26:8086/api/Items/itemByParlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
       
-      final url = 'http://192.168.1.4:8086/api/employees/by-parlourId?parlourId=$parlourId';
+      final url = 'http://192.168.1.26:8086/api/employees/by-parlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Navigate to AddEmployeePage and update the employee count when a new employee is added
-  Future<void> _navigateAndAddEmployee() async {
+   Future<void> _navigateAndAddEmployee() async {
     final updatedEmployeeCount = await Navigator.push<int>(
       context,
       MaterialPageRoute(builder: (context) => AddEmployees()),
@@ -106,7 +106,6 @@ class _HomePageState extends State<HomePage> {
     if (updatedServiceCount != null) {
       setState(() {
         totalServices = updatedServiceCount;
-        
       });
     }
   }
@@ -142,6 +141,7 @@ class _HomePageState extends State<HomePage> {
                             'Welcome Back',
                             style: TextStyle(
                               fontSize: 14,
+                              // ignore: deprecated_member_use
                               color: Colors.white.withOpacity(0.8),
                             ),
                           ),
@@ -163,6 +163,7 @@ class _HomePageState extends State<HomePage> {
                           borderRadius: BorderRadius.circular(15),
                           boxShadow: [
                             BoxShadow(
+                              // ignore: deprecated_member_use
                               color: Colors.black.withOpacity(0.1),
                               blurRadius: 10,
                               offset: Offset(0, 5),
@@ -185,6 +186,7 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
                           offset: Offset(0, 5),
@@ -195,8 +197,10 @@ class _HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildStat('Today\'s\nAppointments', '12'),
+                        // ignore: deprecated_member_use
                         Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
                         _buildStat('Active\nEmployees', '$activeEmployees'),
+                        // ignore: deprecated_member_use
                         Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
                         _buildStat('Total\nServices', '$totalServices'),
                       ],
@@ -317,6 +321,7 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
+              // ignore: deprecated_member_use
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: Offset(0, 5),
@@ -329,6 +334,7 @@ class _HomePageState extends State<HomePage> {
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
+                // ignore: deprecated_member_use
                 color: AppColors.kPrimary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -362,6 +368,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: Offset(0, 5),
@@ -373,6 +380,7 @@ class _HomePageState extends State<HomePage> {
           Container(
             padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
+              // ignore: deprecated_member_use
               color: AppColors.kPrimary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),

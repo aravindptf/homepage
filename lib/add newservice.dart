@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -100,7 +100,7 @@ class _AddServicePageState extends State<AddServicePage> {
   }
 
   Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
-    final url = Uri.parse('http://192.168.1.4:8086/api/Items/AddItems');
+    final url = Uri.parse('http://192.168.1.26:8086/api/Items/AddItems');
     if (_token == null) {
       _showError('Token is not available. Please log in again.');
       return;
@@ -250,6 +250,7 @@ request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
                               ),
                               boxShadow: [
                                 BoxShadow(
+                                  // ignore: deprecated_member_use
                                   color: Colors.blue.withOpacity(0.1),
                                   spreadRadius: 5,
                                   blurRadius: 7,

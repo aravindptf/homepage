@@ -2,10 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homepage/Login.dart';
-import 'package:homepage/editprofile.dart';
 import 'package:homepage/fetchparlour.dart';
 import 'package:homepage/homepage.dart';
-import 'package:homepage/notification.dart';
+import 'package:homepage/offers.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Profile extends StatefulWidget {
@@ -36,6 +35,7 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         _navigateToHomePage(context);
@@ -146,7 +146,7 @@ class _ProfileState extends State<Profile> {
                   ListTile(
                     leading: Icon(Icons.notifications,
                         color: Colors.deepPurple.shade800),
-                    title: Text('Notifications',
+                    title: Text('Offers',
                         style: TextStyle(color: Colors.deepPurple.shade800)),
                     trailing: Icon(Icons.arrow_forward_ios,
                         color: Colors.deepPurple.shade800),
@@ -154,7 +154,7 @@ class _ProfileState extends State<Profile> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => NotificationPage(
+                            builder: (context) => Offers(
                                   
                                 )),
                       );

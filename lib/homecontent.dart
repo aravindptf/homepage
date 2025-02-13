@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:homepage/homepage.dart';
+import 'package:homepage/offers.dart';
 import 'package:homepage/profile_1.dart';
 
 class Homecontent extends StatefulWidget {
@@ -15,7 +16,7 @@ class _HomecontentState extends State<Homecontent> {
   // Define unique pages for navigation
   final List<Widget> pages = [
     HomePage(), // Main Home page
-    HomePage(), // Notifications page (Placeholder)
+    Offers(), // Notifications page (Placeholder)
     Profile(), // Profile page
   ];
 
@@ -54,7 +55,7 @@ class _HomecontentState extends State<Homecontent> {
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.notifications_active), label: 'Notification'),
+                icon: Icon(Icons.notifications_active), label: 'Offers'),
             BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           ],
         ),
