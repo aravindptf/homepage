@@ -14,13 +14,13 @@ class Mappage extends StatefulWidget {
 
 class _MappageState extends State<Mappage> {
   latlong.LatLng? _tappedLocation; // Use latlong.LatLng
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   late MapController _mapController;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   String? _locationName;
   List<String> _suggestions = [];
   String? _locationData; // To store location data from backend
-  List<dynamic> _nearbyParlours = []; // To store nearby parlours
+  final List<dynamic> _nearbyParlours = []; // To store nearby parlours
 
   @override
   void initState() {
@@ -187,7 +187,7 @@ class _MappageState extends State<Mappage> {
             ),
           ),
           if (_suggestions.isNotEmpty)
-            Container(
+            SizedBox(
               height: 150,
               child: ListView.builder(
                 itemCount: _suggestions.length,

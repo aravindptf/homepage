@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class ForgotPasswordPage extends StatefulWidget {
+  const ForgotPasswordPage({super.key});
+
   @override
   _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
 }
@@ -16,7 +18,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   int _step = 1;
 
   Future<void> generateOtp() async {
-    final url = Uri.parse('http://192.168.1.39:8080/parlour/generate_otp?email=${_emailController.text}');
+    final url = Uri.parse('http://192.168.1.16:8086/api/parlour/generate_otp?email=${_emailController.text}');
     final headers = {
       'Content-Type': 'application/json',
       'Cookie': 'JSESSIONID=AF31C56D8757F89F493003A6F83291BD', // Replace with your actual session ID
@@ -54,7 +56,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.39:8080/api/parlour/forgot_password');
+    final url = Uri.parse('http://192.168.1.16:8086/api/parlour/forgot_password');
     final headers = {
       'Content-Type': 'application/json',
       'Cookie': 'JSESSIONID=AF31C56D8757F89F493003A6F83291BD', // Replace with your actual session ID

@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homepage/Login.dart';
 import 'package:homepage/fetchparlour.dart';
+import 'package:homepage/homecontent.dart';
 import 'package:homepage/homepage.dart';
 import 'package:homepage/offers.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Profile extends StatefulWidget {
-  const Profile({Key? key}) : super(key: key);
+  const Profile({super.key});
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -66,12 +67,6 @@ class _ProfileState extends State<Profile> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: _profileImage == null
-                          ? NetworkImage(
-                              'https://i0.wp.com/therighthairstyles.com/wp-content/uploads/2021/09/2-mens-undercut.jpg?resize=500%2C503',
-                            )
-                          : FileImage(File(_profileImage!.path))
-                              as ImageProvider, // Show selected image
                     ),
                     Positioned(
                       bottom: 0,
@@ -180,7 +175,7 @@ class _ProfileState extends State<Profile> {
 
   void _navigateToHomePage(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => HomePage()),
+      MaterialPageRoute(builder: (context) => Homecontent()),
       (Route<dynamic> route) => false,
     );
   }

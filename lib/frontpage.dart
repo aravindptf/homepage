@@ -9,6 +9,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
 }
 
 class FrontScreen extends StatefulWidget {
-  const FrontScreen({Key? key}) : super(key: key);
+  const FrontScreen({super.key});
 
   @override
   FrontScreenState createState() => FrontScreenState();
@@ -135,8 +137,8 @@ class PrimaryButton extends StatelessWidget {
     this.isBorder = false,
     this.fontSize,
     this.color,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ParlourDetailsPage extends StatefulWidget {
+  const ParlourDetailsPage({super.key});
+
   @override
   _ParlourDetailsPageState createState() => _ParlourDetailsPageState();
 }
@@ -12,9 +14,9 @@ class ParlourDetailsPage extends StatefulWidget {
 class _ParlourDetailsPageState extends State<ParlourDetailsPage> {
   Future<Parlour>? parlour;
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _phoneController = TextEditingController();
-  TextEditingController _emailController = TextEditingController(); 
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(); 
   bool _isEditing = false;
   bool _isInitialized = false;
 
@@ -30,7 +32,7 @@ class _ParlourDetailsPageState extends State<ParlourDetailsPage> {
 
   Future<Parlour> fetchParlourDetails(int parlourId) async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.26:8086/api/parlour/id?id=$parlourId'),
+      Uri.parse('http://192.168.1.16:8086/api/parlour/id?id=$parlourId'),
       headers: {
         'Cookie': 'JSESSIONID=ACF91BC7C0410372B5E2DF5E978E186B',
       },
@@ -55,7 +57,7 @@ class _ParlourDetailsPageState extends State<ParlourDetailsPage> {
   print('Token: $token'); // Debugging line
 
   final response = await http.put(
-    Uri.parse('http://192.168.1.26:8086/api/parlour/update'),
+    Uri.parse('http://192.168.1.63:8086/api/parlour/update'),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token', // Include the token in the headers
@@ -308,3 +310,4 @@ class Parlour {
     );
   }
 }
+ 

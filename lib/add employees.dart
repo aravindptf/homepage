@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:homepage/add%20NEW%20employees.dart';
+import 'package:homepage/add%20new%20employees.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddEmployees extends StatefulWidget {
@@ -18,6 +20,16 @@ class _AddEmployeesState extends State<AddEmployees> {
   String? _token;
   String? _parlourId;
 
+  // Controllers for editing employee data
+  late TextEditingController _nameController;
+  bool _isAvailable = true;
+  File? _imageFile;
+
+    void _navigateToAddNewServices() {
+    Navigator.push(context, MaterialPageRoute(builder: (context)=>AddEmployeePage())); // Ensure this route is defined in your app
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -32,7 +44,7 @@ class _AddEmployeesState extends State<AddEmployees> {
     } else {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Parlour ID is not available. Please log in again.')),
+        const SnackBar(content: Text('Parlour ID is missing. Please log in again.')),
       );
     }
   }
@@ -40,45 +52,28 @@ class _AddEmployeesState extends State<AddEmployees> {
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('authToken');
-
-    if (token?.isNotEmpty == true) {
-      setState(() => _token = token);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Authentication token is missing. Please log in.')),
-      );
-    }
+    setState(() => _token = token);
   }
 
   Future<void> _loadParlourId() async {
     final prefs = await SharedPreferences.getInstance();
     final parlourId = prefs.getInt('parlourId');
-
     if (parlourId != null) {
       setState(() => _parlourId = parlourId.toString());
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Parlour ID is missing.')),
-      );
     }
   }
 
   Future<void> fetchEmployees() async {
     try {
-      if (_parlourId == null || _parlourId!.isEmpty) {
-        throw Exception("Parlour ID is missing.");
-      }
+      if (_parlourId == null) throw Exception("Parlour ID is missing.");
 
-      final url = 'http://192.168.1.26:8086/api/employees/by-parlourId?parlourId=$_parlourId';
+      final url = 'http://192.168.1.34:8086/api/employees/by-parlourId?parlourId=$_parlourId';
       final response = await http.get(
         Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_token',
-        },
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_token'},
       );
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.statusCode == 200) {
         List<dynamic> jsonResponse = json.decode(response.body);
         setState(() {
           employees = jsonResponse.map((employee) {
@@ -86,7 +81,7 @@ class _AddEmployeesState extends State<AddEmployees> {
               'id': employee['id'],
               'employeeName': employee['employeeName'],
               'isAvailable': employee['isAvailable'] ?? true,
-              'image': decodeBase64Image(employee['image']),
+              'image': employee['image'],
             };
           }).toList();
         });
@@ -94,30 +89,62 @@ class _AddEmployeesState extends State<AddEmployees> {
         throw Exception('Failed to load employees.');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching employees: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() => isLoading = false);
     }
   }
 
-  Uint8List? decodeBase64Image(String? base64String) {
-    if (base64String == null || base64String.isEmpty) return null;
-    try {
-      return base64Decode(base64String);
-    } catch (e) {
-      return null;
-    }
-  }
+Future<void> _saveEmployee(int employeeId) async {
+  final url = Uri.parse('http://192.168.1.34:8086/api/employees/updateEmployee');
 
-  Future<void> deleteEmployee(int id) async {
+  try {
+    var request = http.MultipartRequest("PUT", url);
+    request.headers.addAll({'Authorization': 'Bearer $_token'});
+
+    // Ensure availability status is sent correctly
+    request.fields['employeeId'] = employeeId.toString();
+    request.fields['employeeName'] = _nameController.text;
+    request.fields['isAvailable'] = _isAvailable ? "true" : "false"; // Convert boolean to string
+
+    if (_imageFile != null) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'image', _imageFile!.path,
+        contentType: MediaType('image', 'jpeg'),
+      ));
+    }
+
+    var response = await request.send();
+
+    if (response.statusCode == 200) {
+      // Refresh employee list after update
+      await fetchEmployees();
+
+      // Close only the edit dialog, not the whole page
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Employee updated successfully."), backgroundColor: Colors.green),
+      );
+    } else {
+      throw Exception('Failed to update employee.');
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+    );
+  }
+}
+
+ Future<void> deleteEmployee(int id) async {
     try {
       if (_token == null || _token!.isEmpty) {
         throw Exception('Authentication token is unavailable.');
       }
 
-      final url = 'http://192.168.1.26:8086/api/employees/delete?employeeId=$id';
+      final url = 'http://192.168.1.34:8086/api/employees/delete?employeeId=$id';
       final confirmDelete = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
@@ -162,6 +189,7 @@ class _AddEmployeesState extends State<AddEmployees> {
       );
     }
   }
+  
 
   void navigateToAddEmployee() async {
     final newEmployee = await Navigator.push(
@@ -175,61 +203,211 @@ class _AddEmployeesState extends State<AddEmployees> {
     }
   }
 
+ Future<void> _pickImage(Function(File) updateImage) async {
+  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    updateImage(File(pickedFile.path));
+  }
+}
+
+
+void navigateToEditEmployee(Map<String, dynamic> employee) {
+  _nameController = TextEditingController(text: employee['employeeName']);
+  _isAvailable = employee['isAvailable'] ?? true; // Ensure correct boolean value
+  _imageFile = null; // Reset selected image
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text("Edit Employee"),
+            content: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        await _pickImage((image) {
+                          setDialogState(() {
+                            _imageFile = image;
+                          });
+                        });
+                      },
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF1E88E5), width: 3),
+                          image: _imageFile != null
+                              ? DecorationImage(
+                                  image: FileImage(_imageFile!),
+                                  fit: BoxFit.cover,
+                                )
+                              : (employee['image'] != null && employee['image'].isNotEmpty
+                                  ? DecorationImage(
+                                      image: employee['image'].startsWith('http')
+                                          ? NetworkImage(employee['image'])
+                                          : (employee['image'].contains('/data/user')
+                                              ? FileImage(File(employee['image']))
+                                              : MemoryImage(base64Decode(employee['image']))),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null),
+                        ),
+                        child: _imageFile == null && (employee['image'] == null || employee['image'].isEmpty)
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.add_a_photo, size: 40, color: Color(0xFF1E88E5)),
+                                  SizedBox(height: 8),
+                                  Text('Add Photo',
+                                    style: TextStyle(color: Color(0xFF1E88E5), fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildInputField(
+                      controller: _nameController,
+                      label: 'Employee Name',
+                      icon: Icons.person,
+                      keyboardType: TextInputType.name,
+                    ),
+                    SwitchListTile(
+                      title: const Text("Availability"),
+                      value: _isAvailable,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _isAvailable = value; // Update switch in real-time
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await _saveEmployee(employee['id']);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E88E5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          'Save Changes',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
+
+Widget _buildInputField({
+  required TextEditingController controller,
+  required String label,
+  required IconData icon,
+  TextInputType? keyboardType,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: TextStyle(color: Colors.grey.shade800),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey.shade600),
+        prefixIcon: Icon(icon, color: Color(0xFF1E88E5)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Color(0xFF1E88E5), width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Employees", style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: navigateToAddEmployee,
-          ),
-        ],
-      ),
+      appBar: AppBar(backgroundColor: Colors.blue, title: const Text("Employees", style: TextStyle(color: Colors.white))),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : employees.isEmpty
-              ? const Center(
-                  child: Text("No employees added.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                )
+              ? const Center(child: Text("No employees found."))
               : ListView.builder(
                   padding: const EdgeInsets.all(10),
                   itemCount: employees.length,
                   itemBuilder: (context, index) {
                     final employee = employees[index];
-                    final Uint8List? imageBytes = employee['image'];
 
                     return Card(
                       elevation: 5,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.all(10),
                         leading: CircleAvatar(
-                          radius: 30,
-                          backgroundImage: imageBytes != null ? MemoryImage(imageBytes) : null,
-                          child: imageBytes == null ? const Icon(Icons.person, size: 30) : null,
-                        ),
-                        title: Text(employee['employeeName'] ?? 'No Name',
-                            style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(
-                          "Availability: ${employee['isAvailable'] == true ? "Available" : "Not Available"}",
-                          style: TextStyle(color: employee['isAvailable'] ? Colors.green : Colors.red),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => deleteEmployee(employee['id']),
+  radius: 30,
+  backgroundColor: Colors.grey[300], // Placeholder color
+  backgroundImage: employee['image'] != null && employee['image'].isNotEmpty
+      ? (employee['image'].startsWith('http') // Check if it's a URL
+          ? NetworkImage(employee['image'])
+          : (employee['image'].contains('/data/user') // Check if it's a file path
+              ? FileImage(File(employee['image'])) as ImageProvider
+              : MemoryImage(base64Decode(employee['image'])))) // Otherwise, decode Base64
+      : const AssetImage('assets/placeholder.jpg') as ImageProvider, // Default Image
+),
+
+
+                        title: Text(employee['employeeName'] ?? 'No Name', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text("Availability: ${employee['isAvailable'] ? "Available" : "Not Available"}"),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => navigateToEditEmployee(employee)),
+                            IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => deleteEmployee(employee['id'])),
+                          ],
                         ),
                       ),
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: navigateToAddEmployee,
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.purple,
-      ),
-    );
+
+                 floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddNewServices,
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.add, color: Colors.white),
+                
+    ));
   }
 }

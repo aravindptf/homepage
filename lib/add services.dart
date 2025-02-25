@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:homepage/add%20newservice.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:homepage/color.dart'; // Assuming this file contains your color constants
 
 class ServicesPage extends StatefulWidget {
+  const ServicesPage({super.key});
+
   @override
   _ServicesPageState createState() => _ServicesPageState();
 }
@@ -40,7 +43,7 @@ class _ServicesPageState extends State<ServicesPage> {
   Future<void> fetchServicesByParlourId() async {
     if (_parlourId == null) return;
 
-    final url = Uri.parse('http://192.168.1.26:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
+    final url = Uri.parse('http://192.168.1.34:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
     final headers = {'Content-Type': 'application/json'};
 
     try {
@@ -71,15 +74,12 @@ class _ServicesPageState extends State<ServicesPage> {
     }
   }
 
-  /// **Decode Base64 Image to Uint8List**
   Uint8List? decodeBase64Image(String? base64String) {
     if (base64String == null || base64String.isEmpty) return null;
     try {
-      // Remove the "data:image/png;base64," prefix if present
       if (base64String.contains(",")) {
         base64String = base64String.split(",").last;
       }
-      // Normalize Base64 string and decode
       return base64Decode(base64.normalize(base64String));
     } catch (e) {
       print('Error decoding base64 image: $e');
@@ -87,88 +87,80 @@ class _ServicesPageState extends State<ServicesPage> {
     }
   }
 
-  // **Delete Service**
-// **Delete Service**
-Future<void> deleteService(String itemId) async {
-  // Fetch the token from SharedPreferences
-  final prefs = await SharedPreferences.getInstance();
-  String? token = prefs.getString('authToken');
+  Future<void> deleteService(String itemId) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('authToken');
 
-  // Check if the token exists
-  if (token == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('You are not logged in!')),
-    );
-    return;
-  }
-
-  final url = Uri.parse('http://192.168.1.26:8086/api/Items/delete?itemId=$itemId');
-  final headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $token', // Include the token in the header
-  };
-
-  try {
-    final response = await http.delete(url, headers: headers);
-
-    if (response.statusCode == 200) {
+    if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Item deleted successfully!')),
+        SnackBar(content: Text('You are not logged in!')),
       );
-      
-      // Refresh the list by fetching the updated data from the server
-      await fetchServicesByParlourId(); // Reload items from server
+      return;
+    }
 
-      // Optional: Pop the current screen if you want to navigate away immediately
-      // Navigator.pop(context); // Uncomment this if you want to pop the screen after deletion
-    } else {
+    final url = Uri.parse('http://192.168.1.16:8086/api/Items/delete?itemId=$itemId');
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    try {
+      final response = await http.delete(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Item deleted successfully!')),
+        );
+        await fetchServicesByParlourId();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting item')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting item')),
+        SnackBar(content: Text('Error deleting service: $e')),
       );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error deleting service: $e')),
+  }
+
+  Future<void> showConfirmationDialog(String itemId) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Deletion', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text('Are you sure you want to delete this service? This action cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel', style: TextStyle(color: AppColors.kPrimary)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                deleteService(itemId);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
-}
-
-
-// **Confirmation Dialog before Delete**
-Future<void> showConfirmationDialog(String itemId) async {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Are you sure?'),
-        content: Text('Do you want to delete this service?'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('Cancel'),
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
-          ),
-          TextButton(
-            child: Text('Delete'),
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-              deleteService(itemId); // Proceed to delete the service
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Services List")),
+      backgroundColor: AppColors.kBackground,
+      appBar: AppBar(
+        title: Text("Services List"),
+        backgroundColor: AppColors.kPrimary,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(16.0),
         child: items.isEmpty
             ? Center(child: CircularProgressIndicator())
             : ListView.builder(
@@ -186,8 +178,13 @@ Future<void> showConfirmationDialog(String itemId) async {
                   Uint8List? imageBytes = decodeBase64Image(item['image']);
 
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: ListTile(
+                      contentPadding: EdgeInsets.all(16),
                       leading: imageBytes != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(10),
@@ -207,22 +204,22 @@ Future<void> showConfirmationDialog(String itemId) async {
                               ),
                               child: Icon(Icons.image, size: 40, color: Colors.grey[600]),
                             ),
-                      title: Text(itemName),
+                      title: Text(itemName, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.kPrimary)),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Category: $categoryName'),
-                          Text('SubCategory: $subCategoryName'),
-                          Text('Sub SubCategory: $subSubCategoryName'),
-                          Text('Price: \$${price.toString()}'),
-                          Text('Service Time: $serviceTime'),
-                          Text('Availability: $availability'),
+                          SizedBox(height: 4),
+                          Text('Category: $categoryName', style: TextStyle(color: Colors.black54)),
+                          Text('SubCategory: $subCategoryName', style: TextStyle(color: Colors.black54)),
+                          Text('Sub SubCategory: $subSubCategoryName', style: TextStyle(color: Colors.black54)),
+                          Text('Price: \$${price.toStringAsFixed(2)}', style: TextStyle(color: Colors.black87)),
+                          Text('Service Time: $serviceTime', style: TextStyle(color: Colors.black54)),
+                          Text('Availability: $availability', style: TextStyle(color: availability == "Available" ? Colors.green : Colors.red)),
                         ],
                       ),
                       trailing: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
-                          // Show the confirmation dialog
                           showConfirmationDialog(item['id'].toString());
                         },
                       ),
@@ -238,8 +235,9 @@ Future<void> showConfirmationDialog(String itemId) async {
             MaterialPageRoute(builder: (context) => AddServicePage()),
           );
         },
-        child: Icon(Icons.add),
         tooltip: 'Add New Service',
+        backgroundColor: AppColors.kPrimary,
+        child: Icon(Icons.add),
       ),
     );
   }

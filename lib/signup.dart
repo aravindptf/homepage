@@ -12,7 +12,7 @@ Future<bool> registerParlour(Map<String, dynamic> parlourData, XFile? image,
     XFile? coverImage, XFile? licenseImage) async {
   var request = http.MultipartRequest(
     'POST',
-    Uri.parse('http://192.168.1.4:8086/api/parlour/ParlourReg'),
+    Uri.parse('http://192.168.1.16:8086/api/parlour/ParlourReg'),
   );
 
   // Add fields to the request
@@ -60,7 +60,10 @@ var response = await request.send();
 if (response.statusCode == 200 && response.statusCode < 300) {
   String responseBody = await response.stream.bytesToString();
   final parsedResponse = jsonDecode(responseBody);
-  int parlourId = parsedResponse['id'];  // Ensure 'id' matches backend response key
+  int parlourId = parsedResponse['id'];
+    // Ensure 'id' matches backend response key
+
+    
   
   // Save parlourId in SharedPreferences
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -80,10 +83,10 @@ class Signup extends StatefulWidget {
   final FormFieldSetter<String>? onSaved;
 
   const Signup({
-    Key? key,
+    super.key,
     this.validator,
     this.onSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<Signup> createState() => _RegisterPageState();
@@ -334,7 +337,7 @@ class _RegisterPageState extends State<Signup> {
                     ),
                     TextFormField(
                       decoration: InputDecoration(
-                        hintText: 'State',
+                        hintText: 'Address',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30.0),
                           borderSide: BorderSide(color: Colors.grey),

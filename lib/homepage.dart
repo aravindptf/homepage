@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -30,7 +32,7 @@ class _HomePageState extends State<HomePage> {
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
       
-      final url = 'http://192.168.1.26:8086/api/Items/itemByParlourId?parlourId=$parlourId';
+      final url = 'http://192.168.1.34:8086/api/Items/itemByParlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
@@ -56,7 +58,7 @@ class _HomePageState extends State<HomePage> {
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
       
-      final url = 'http://192.168.1.26:8086/api/employees/by-parlourId?parlourId=$parlourId';
+      final url = 'http://192.168.1.34:8086/api/employees/by-parlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},

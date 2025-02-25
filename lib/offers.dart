@@ -5,16 +5,18 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Offers extends StatefulWidget {
+  const Offers({super.key});
+
   @override
   _OffersPageState createState() => _OffersPageState();
 }
 
 class _OffersPageState extends State<Offers> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _offerNameController = TextEditingController();
-  TextEditingController _discountController = TextEditingController();
-  TextEditingController _startDateController = TextEditingController();
-  TextEditingController _endDateController = TextEditingController();
+  final TextEditingController _offerNameController = TextEditingController();
+  final TextEditingController _discountController = TextEditingController();
+  final TextEditingController _startDateController = TextEditingController();
+  final TextEditingController _endDateController = TextEditingController();
   File? _image;
   int? parlourId;
 
@@ -73,8 +75,8 @@ class _OffersPageState extends State<Offers> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.1.26:8086/api/offer/add'),
-      );
+        Uri.parse('http://192.168.1.16:8086/api/offer/add'),
+      );  
 
       request.headers['Authorization'] = 'Bearer $token';
       request.fields['typeId'] = "1";

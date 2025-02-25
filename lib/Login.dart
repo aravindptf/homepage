@@ -26,7 +26,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
   final _shakeKey = GlobalKey<ShakeWidgetState>(); 
 
  Future<String> login(String emailOrPhone, String password) async {
-  final String url = 'http://192.168.1.26:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
+  final String url = 'http://192.168.1.34:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
   
   final Map<String, dynamic> requestBody = {
     'email': emailOrPhone,
@@ -299,10 +299,10 @@ class ShakeWidget extends StatefulWidget {
   const ShakeWidget({
     required this.child,
     required this.shakeOffset,
-    Key? key,
+    super.key,
     this.shakeCount = 3,
     this.shakeDuration = const Duration(milliseconds: 400),
-  }) : super(key: key);
+  });
   final Widget child;
   final double shakeOffset;
   final int shakeCount;
@@ -401,8 +401,8 @@ class PrimaryButton extends StatelessWidget {
     this.fontSize,
     this.color,
     this.textColor, // Add this line for text color
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
