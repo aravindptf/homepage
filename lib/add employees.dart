@@ -67,7 +67,7 @@ class _AddEmployeesState extends State<AddEmployees> {
     try {
       if (_parlourId == null) throw Exception("Parlour ID is missing.");
 
-      final url = 'http://192.168.1.34:8086/api/employees/by-parlourId?parlourId=$_parlourId';
+      final url = 'http://192.168.1.200:8086/api/employees/by-parlourId?parlourId=$_parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_token'},
@@ -96,7 +96,7 @@ class _AddEmployeesState extends State<AddEmployees> {
   }
 
 Future<void> _saveEmployee(int employeeId) async {
-  final url = Uri.parse('http://192.168.1.34:8086/api/employees/updateEmployee');
+  final url = Uri.parse('http://192.168.1.200:8086/api/employees/updateEmployee');
 
   try {
     var request = http.MultipartRequest("PUT", url);
@@ -144,7 +144,7 @@ Future<void> _saveEmployee(int employeeId) async {
         throw Exception('Authentication token is unavailable.');
       }
 
-      final url = 'http://192.168.1.34:8086/api/employees/delete?employeeId=$id';
+      final url = 'http://192.168.1.200:8086/api/employees/delete?employeeId=$id';
       final confirmDelete = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(

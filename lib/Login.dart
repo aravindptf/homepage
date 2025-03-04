@@ -26,7 +26,7 @@ class _DoorHubSignInPageState extends State<Loginpage> {
   final _shakeKey = GlobalKey<ShakeWidgetState>(); 
 
  Future<String> login(String emailOrPhone, String password) async {
-  final String url = 'http://192.168.1.34:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
+  final String url = 'http://192.168.1.200:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
   
   final Map<String, dynamic> requestBody = {
     'email': emailOrPhone,

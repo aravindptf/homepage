@@ -4,9 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homepage/Login.dart';
 import 'package:homepage/fetchparlour.dart';
 import 'package:homepage/homecontent.dart';
-import 'package:homepage/homepage.dart';
 import 'package:homepage/offers.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -17,30 +17,46 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   final ImagePicker _picker = ImagePicker();
-  XFile? _profileImage; // Holds the selected profile image
+  String? _profileImagePath; // Stores the saved image path
 
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  /// Load saved profile image path from SharedPreferences
+  Future<void> _loadProfileImage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _profileImagePath = prefs.getString('profileImagePath');
+    });
+  }
+
+  /// Pick an image from gallery and save it
   Future<void> _pickImage() async {
-    // Show options for picking image
     final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery, // or ImageSource.camera for camera
+      source: ImageSource.gallery,
       maxWidth: 600,
-      imageQuality: 85, // Adjust quality to save data
+      imageQuality: 85,
     );
 
     if (image != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profileImagePath', image.path); // Save the path
+
       setState(() {
-        _profileImage = image;
+        _profileImagePath = image.path; // Update UI with new image
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         _navigateToHomePage(context);
-        return false; // Prevent default back button behavior
+        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -67,6 +83,12 @@ class _ProfileState extends State<Profile> {
                   children: [
                     CircleAvatar(
                       radius: 50,
+                      backgroundImage: _profileImagePath != null
+                          ? FileImage(File(_profileImagePath!)) // Display saved image
+                          : null,
+                      child: _profileImagePath == null
+                          ? Icon(Icons.person, size: 50) // Default placeholder
+                          : null,
                     ),
                     Positioned(
                       bottom: 0,
@@ -78,31 +100,14 @@ class _ProfileState extends State<Profile> {
                           color: Colors.deepPurple.shade400,
                           shape: BoxShape.circle,
                         ),
-                        child: Center(
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.camera_alt_outlined,
-                              size: 16,
-                            ),
-                            color: Colors.white,
-                            onPressed: _pickImage, // Open image picker
-                          ),
+                        child: IconButton(
+                          icon: Icon(Icons.camera_alt_outlined, size: 16),
+                          color: Colors.white,
+                          onPressed: _pickImage, // Open image picker
                         ),
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
-            // Positioned name and email
-            Positioned(
-              top: 130,
-              left: 60, // Adjust the left alignment to 0
-              right: 0,
-              child: Center(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.center, // Center the text horizontally
                 ),
               ),
             ),
@@ -122,9 +127,10 @@ class _ProfileState extends State<Profile> {
                         color: Colors.deepPurple.shade800),
                     onTap: () {
                       Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => ParlourDetailsPage()));
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ParlourDetailsPage()),
+                      );
                     },
                   ),
                   ListTile(
@@ -148,10 +154,7 @@ class _ProfileState extends State<Profile> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => Offers(
-                                  
-                                )),
+                        MaterialPageRoute(builder: (context) => Offers()),
                       );
                     },
                   ),
@@ -195,11 +198,13 @@ class _ProfileState extends State<Profile> {
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Logged out successfully'),
-                ));
+              onPressed: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.remove('profileImagePath'); // Clear saved image
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Logged out successfully')),
+                );
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => Loginpage()),
                   (Route<dynamic> route) => false,

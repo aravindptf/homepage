@@ -1,12 +1,39 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:homepage/add%20employees.dart';
-import 'package:homepage/appoinments.dart';
 import 'package:homepage/add%20services.dart';
-import 'package:homepage/color.dart';  // Assuming this file contains your color constants
+
+import 'package:homepage/appoinments.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Premium color palette for the beauty salon app
+class AppColors {
+  // Primary color - A rich purple that conveys luxury
+  static const Color kPrimary = Color(0xFF8A2BE2); // Deep purple
+
+  // Secondary color - Soft gold for an elegant accent
+  static const Color kSecondary = Color(0xFFDAAA00);
+
+  // Background color - Soft white for a clean look
+  static const Color kBackground = Color(0xFFF9F6FF);
+
+  // Card backgrounds - Pure white for contrast
+  static const Color kCardBackground = Colors.white;
+
+  // Text colors
+  static const Color kTextDark = Color(0xFF2D2D3A); // Nearly black but softer
+  static const Color kTextMedium = Color(0xFF6B6B7B); // Medium gray with slight purple tint
+  static const Color kTextLight = Color(0xFF9E9EAF); // Light gray with slight purple tint
+
+  // Accent colors for indicators and highlights
+  static const Color kAccentSuccess = Color(0xFF4CAF84); // Emerald green
+  static const Color kAccentWarning = Color(0xFFFFB74D); // Amber
+  static const Color kAccentError = Color(0xFFE57373); // Coral red
+
+  // Shadow color
+  static const Color kShadow = Color(0x148A2BE2); // Primary color with low opacity for shadows
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,14 +43,39 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int activeEmployees = 0;  // To store active employee count
-  int totalServices = 0;    // To store total service count
+  int activeEmployees = 0; // To store active employee count
+  int totalServices = 0; // To store total service count
+  bool _isRefreshing = false; // To track if refresh is in progress
 
   @override
   void initState() {
     super.initState();
-    _fetchEmployeeCount();  // Fetch the initial employee count when the page loads
+    _fetchEmployeeCount(); // Fetch the initial employee count when the page loads
     _fetchServiceCount();
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _isRefreshing = true; // Start showing the circular indicator
+    });
+
+    try {
+      // Fetch updated counts
+      await _fetchEmployeeCount();
+      await _fetchServiceCount();
+
+      // Simulate a delay if no updates are found
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Show success message
+      _showSuccess('Updated successfully');
+    } catch (e) {
+      _showError('Error during refresh: $e');
+    } finally {
+      setState(() {
+        _isRefreshing = false; // Hide the circular indicator
+      });
+    }
   }
 
   Future<void> _fetchServiceCount() async {
@@ -31,17 +83,21 @@ class _HomePageState extends State<HomePage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
-      
-      final url = 'http://192.168.1.34:8086/api/Items/itemByParlourId?parlourId=$parlourId';
+
+      final url =
+          'http://192.168.1.200:8086/api/Items/itemByParlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
       );
-      
+
       if (response.statusCode == 200) {
-        final List<dynamic> Services = json.decode(response.body);
+        final List services = json.decode(response.body);
         setState(() {
-          totalServices = Services.length;
+          totalServices = services.length;
         });
       } else {
         throw Exception('Failed to fetch Services count');
@@ -51,21 +107,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Fetch the employee count from the server
   Future<void> _fetchEmployeeCount() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('authToken');
       final parlourId = prefs.getInt('parlourId')?.toString();
-      
-      final url = 'http://192.168.1.34:8086/api/employees/by-parlourId?parlourId=$parlourId';
+
+      final url =
+          'http://192.168.1.200:8086/api/employees/by-parlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
+        },
       );
-      
+
       if (response.statusCode == 200) {
-        final List<dynamic> employees = json.decode(response.body);
+        final List employees = json.decode(response.body);
         setState(() {
           activeEmployees = employees.length;
         });
@@ -77,38 +136,55 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Show error messages using SnackBar
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red.shade400),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.kAccentError,
+      ),
     );
   }
 
-  // Navigate to AddEmployeePage and update the employee count when a new employee is added
-   Future<void> _navigateAndAddEmployee() async {
-    final updatedEmployeeCount = await Navigator.push<int>(
-      context,
-      MaterialPageRoute(builder: (context) => AddEmployees()),
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.kAccentSuccess,
+      ),
     );
+  }
 
-    if (updatedEmployeeCount != null) {
-      setState(() {
-        activeEmployees = updatedEmployeeCount;
-      });
+  Future<void> _navigateAndAddEmployee() async {
+    try {
+      final updatedEmployeeCount = await Navigator.push<int>(
+        context,
+        MaterialPageRoute(builder: (context) => AddEmployees()),
+      );
+
+      if (updatedEmployeeCount != null) {
+        setState(() {
+          activeEmployees = updatedEmployeeCount;
+        });
+      }
+    } catch (e) {
+      _showError('Error navigating to Add Employees: $e');
     }
   }
 
-  // Navigate to ServicesPage and update the total number of services
   Future<void> _navigateAndFetchServices() async {
-    final updatedServiceCount = await Navigator.push<int>(
-      context,
-      MaterialPageRoute(builder: (context) => ServicesPage()),
-    );
+    try {
+      final updatedServiceCount = await Navigator.push<int>(
+        context,
+        MaterialPageRoute(builder: (context) => ServicesPage()),
+      );
 
-    if (updatedServiceCount != null) {
-      setState(() {
-        totalServices = updatedServiceCount;
-      });
+      if (updatedServiceCount != null) {
+        setState(() {
+          totalServices = updatedServiceCount;
+        });
+      }
+    } catch (e) {
+      _showError('Error navigating to Services Page: $e');
     }
   }
 
@@ -116,174 +192,213 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.kBackground,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Premium Header Section
-            Container(
-              padding: EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 30),
-              decoration: BoxDecoration(
-                color: AppColors.kPrimary,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Premium Header Section with updated design
+                Container(
+                  padding:
+                      const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 30),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.kPrimary,
+                        const Color(0xFF6A0DAD), // Darker variant of primary for gradient
+                      ],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.kShadow,
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Welcome Back',
-                            style: TextStyle(
-                              fontSize: 14,
-                              // ignore: deprecated_member_use
-                              color: Colors.white.withOpacity(0.8),
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Welcome Back',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              const Text(
+                                'Beauty Salon',
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(height: 5),
-                          Text(
-                            'Beauty Salon',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          GestureDetector(
+                            onTap: _refreshData, // Refresh button
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.refresh_rounded,
+                                color: AppColors.kPrimary,
+                                size: 26,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                      const SizedBox(height: 30),
+                      // Premium stats card
                       Container(
-                        padding: EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
+                          color: AppColors.kCardBackground,
+                          borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              // ignore: deprecated_member_use
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.notifications_none_rounded,
-                          color: AppColors.kPrimary,
-                          size: 28,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildStat("Today's\nAppointments", '12'),
+                            Container(
+                                height: 45,
+                                width: 1,
+                                color: Colors.grey.withOpacity(0.2)),
+                            _buildStat('Active\nEmployees', '$activeEmployees'),
+                            Container(
+                                height: 45,
+                                width: 1,
+                                color: Colors.grey.withOpacity(0.2)),
+                            _buildStat('Total\nServices', '$totalServices'),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 30),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          // ignore: deprecated_member_use
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStat('Today\'s\nAppointments', '12'),
-                        // ignore: deprecated_member_use
-                        Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
-                        _buildStat('Active\nEmployees', '$activeEmployees'),
-                        // ignore: deprecated_member_use
-                        Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.3)),
-                        _buildStat('Total\nServices', '$totalServices'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
 
-            // Quick Actions Section
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quick Actions',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Quick Actions Section with updated design
+                Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPremiumActionCard(
-                        'Add\nEmployees',
-                        Icons.person_add_rounded,
-                        _navigateAndAddEmployee,
+                      const Text(
+                        'Quick Actions',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.kTextDark,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                      _buildPremiumActionCard(
-                        'Manage\nAppointments',
-                        Icons.calendar_today_rounded,
-                        () => Navigator.push(context, MaterialPageRoute(builder: (context) => AppointmentsPage())),
-                      ),
-                      _buildPremiumActionCard(
-                        'Add\nServices',
-                        Icons.spa_rounded,
-                        _navigateAndFetchServices,
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildPremiumActionCard(
+                            'Add\nEmployees',
+                            Icons.person_add_rounded,
+                            _navigateAndAddEmployee,
+                          ),
+                          _buildPremiumActionCard(
+                            'Manage\nAppointments',
+                            Icons.calendar_today_rounded,
+                            () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => AppointmentsPage())),
+                          ),
+                          _buildPremiumActionCard(
+                            'Add\nServices',
+                            Icons.spa_rounded,
+                            _navigateAndFetchServices,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // Recent Activity Section
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Recent Activity',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                // Recent Activity Section with updated design
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(25, 0, 25, 25),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Recent Activity',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.kTextDark,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildActivityCard(
+                        'New Appointment',
+                        'Sarah Johnson - Hair Styling',
+                        '10:30 AM',
+                        Icons.access_time_rounded,
+                      ),
+                      const SizedBox(height: 15),
+                      _buildActivityCard(
+                        'Service Completed',
+                        'Emma Davis - Manicure',
+                        '09:15 AM',
+                        Icons.check_circle_outline_rounded,
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 20),
-                  _buildActivityCard(
-                    'New Appointment',
-                    'Sarah Johnson - Hair Styling',
-                    '10:30 AM',
-                    Icons.access_time_rounded,
-                  ),
-                  SizedBox(height: 15),
-                  _buildActivityCard(
-                    'Service Completed',
-                    'Emma Davis - Manicure',
-                    '09:15 AM',
-                    Icons.check_circle_outline_rounded,
-                  ),
-                ],
+                ),
+              ],
+            ),
+          ),
+
+          // Circular Progress Indicator
+          if (_isRefreshing)
+            Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.kPrimary),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -293,40 +408,41 @@ class _HomePageState extends State<HomePage> {
       children: [
         Text(
           value,
-          style: TextStyle(
-            fontSize: 24,
+          style: const TextStyle(
+            fontSize: 26,
             fontWeight: FontWeight.bold,
             color: AppColors.kPrimary,
           ),
         ),
-        SizedBox(height: 5),
+        const SizedBox(height: 5),
         Text(
           title,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: AppColors.kTextMedium,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPremiumActionCard(String title, IconData icon, VoidCallback onTap) {
+  Widget _buildPremiumActionCard(
+      String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.27,
-        padding: EdgeInsets.all(15),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          color: AppColors.kCardBackground,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              // ignore: deprecated_member_use
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 5),
+              color: AppColors.kShadow,
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -334,11 +450,10 @@ class _HomePageState extends State<HomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                // ignore: deprecated_member_use
-                color: AppColors.kPrimary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.kPrimary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
@@ -346,14 +461,15 @@ class _HomePageState extends State<HomePage> {
                 size: 24,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: AppColors.kTextDark,
+                letterSpacing: 0.3,
               ),
             ),
           ],
@@ -362,29 +478,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildActivityCard(String title, String subtitle, String time, IconData icon) {
+  Widget _buildActivityCard(
+      String title, String subtitle, String time, IconData icon) {
     return Container(
-      padding: EdgeInsets.all(15),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        color: AppColors.kCardBackground,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 5),
+            color: AppColors.kShadow,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              // ignore: deprecated_member_use
-              color: AppColors.kPrimary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.kPrimary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
@@ -392,7 +507,7 @@ class _HomePageState extends State<HomePage> {
               size: 24,
             ),
           ),
-          SizedBox(width: 15),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,14 +517,16 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.kTextDark,
+                    letterSpacing: 0.3,
                   ),
                 ),
+                const SizedBox(height: 3),
                 Text(
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: AppColors.kTextMedium,
                   ),
                 ),
               ],
@@ -419,7 +536,8 @@ class _HomePageState extends State<HomePage> {
             time,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+              color: AppColors.kTextLight,
             ),
           ),
         ],

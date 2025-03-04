@@ -71,7 +71,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
  Future<void> _saveEmployeeToBackend() async {
   if (!_validateFields()) return;
 
-  final url = Uri.parse('http://192.168.1.34:8086/api/employees/addEmployee');
+  final url = Uri.parse('http://192.168.1.200:8086/api/employees/addEmployee');
   if (_token == null) {
     _showError('Token is not available. Please log in again.');
     return;
