@@ -18,15 +18,16 @@ class Loginpage extends StatefulWidget {
   State<Loginpage> createState() => _DoorHubSignInPageState();
 }
 
+   
 class _DoorHubSignInPageState extends State<Loginpage> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); 
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   final _shakeKey = GlobalKey<ShakeWidgetState>(); 
 
  Future<String> login(String emailOrPhone, String password) async {
-  final String url = 'http://192.168.1.200:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
+  final String url = 'http://192.168.1.14:8086/api/parlour/ParlourLogin'; // Replace with your backend API URL
   
   final Map<String, dynamic> requestBody = {
     'email': emailOrPhone,
@@ -446,7 +447,7 @@ class CustomTextButton extends StatelessWidget {
       onPressed: onPressed,
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.kPrimary, fontSize: 12),
+        style:  TextStyle(color: AppColors.kPrimary, fontSize: 12),
       ),
     );
   }

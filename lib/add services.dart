@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:homepage/add%20newservice.dart';
+import 'package:homepage/editservice.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:homepage/color.dart'; // Assuming this file contains your color constants
@@ -12,6 +13,7 @@ class ServicesPage extends StatefulWidget {
   @override
   _ServicesPageState createState() => _ServicesPageState();
 }
+
 
 class _ServicesPageState extends State<ServicesPage> {
   List<dynamic> items = [];
@@ -43,7 +45,7 @@ class _ServicesPageState extends State<ServicesPage> {
   Future<void> fetchServicesByParlourId() async {
     if (_parlourId == null) return;
 
-    final url = Uri.parse('http://192.168.1.200:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
+    final url = Uri.parse('http://192.168.1.20:8086/api/Items/itemByParlourId?parlourId=$_parlourId');
     final headers = {'Content-Type': 'application/json'};
 
     try {
@@ -98,7 +100,7 @@ class _ServicesPageState extends State<ServicesPage> {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.200:8086/api/Items/delete?itemId=$itemId');
+    final url = Uri.parse('http://192.168.1.20:8086/api/Items/delete?itemId=$itemId');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -146,8 +148,7 @@ Widget build(BuildContext context) {
                       ],
                     ),
                 borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -223,58 +224,58 @@ Widget build(BuildContext context) {
                   ),
                   const SizedBox(height: 20),
                   // Services stats card
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: AppColors.kCardBackground,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.kPrimary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.spa_rounded,
-                            color: AppColors.kPrimary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Services',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.kTextMedium,
-                              ),
-                            ),
-                            Text(
-                              '${items.length} Services',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.kTextDark,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Container(
+                  //   padding: const EdgeInsets.all(15),
+                  //   decoration: BoxDecoration(
+                  //     color: AppColors.kCardBackground,
+                  //     borderRadius: BorderRadius.circular(20),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: Colors.black.withOpacity(0.08),
+                  //         blurRadius: 15,
+                  //         offset: const Offset(0, 8),
+                  //       ),
+                  //     ],
+                  //   ),
+                  //   child: Row(
+                  //     children: [
+                  //       Container(
+                  //         padding: const EdgeInsets.all(12),
+                  //         decoration: BoxDecoration(
+                  //           color: AppColors.kPrimary.withOpacity(0.12),
+                  //           borderRadius: BorderRadius.circular(12),
+                  //         ),
+                  //         child: Icon(
+                  //           Icons.spa_rounded,
+                  //           color: AppColors.kPrimary,
+                  //           size: 24,
+                  //         ),
+                  //       ),
+                  //       const SizedBox(width: 15),
+                  //       Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: [
+                  //           Text(
+                  //             'Total Services',
+                  //             style: TextStyle(
+                  //               fontSize: 14,
+                  //               fontWeight: FontWeight.w500,
+                  //               color: AppColors.kTextMedium,
+                  //             ),
+                  //           ),
+                  //           Text(
+                  //             '${items.length} Services',
+                  //             style: TextStyle(
+                  //               fontSize: 18,
+                  //               fontWeight: FontWeight.bold,
+                  //               color: AppColors.kTextDark,
+                  //             ),
+                  //           ),
+                  //         ],
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -286,19 +287,18 @@ Widget build(BuildContext context) {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Service List',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.kTextDark,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
+                    // Text(
+                    //   'Service List',
+                    //   style: TextStyle(
+                    //     fontSize: 20,
+                    //     fontWeight: FontWeight.bold,
+                    //     color: AppColors.kTextDark,
+                    //     letterSpacing: 0.5,
+                    //   ),
+                    // ),
+                    
                 Expanded(
   child: ListView.builder(
-    physics: BouncingScrollPhysics(),
     itemCount: items.length,
     itemBuilder: (context, index) {
       var item = items[index];
@@ -451,6 +451,35 @@ Widget build(BuildContext context) {
                   },
                 ),
               ),
+              // Inside the ListView.builder, replace the delete button section with this:
+Container(
+  height: 36,
+  width: 36,
+  decoration: BoxDecoration(
+    color: AppColors.kAccentError.withOpacity(0.1),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: IconButton(
+    padding: EdgeInsets.zero,
+    icon: Icon(
+      Icons.edit, // Change to edit icon
+      color: AppColors.kAccentError,
+      size: 20,
+    ),
+   onPressed: () async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken') ?? ''; 
+      // Navigate to EditServicePage with the service details
+      Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => EditServicePage(itemId: 1, token: token),
+  ),
+);
+
+    },
+  ),
+),
             ],
           ),
         ),
@@ -500,7 +529,6 @@ Widget build(BuildContext context) {
     ),
   );
 }
-
 // Updated confirmation dialog with premium styling
 Future<void> showConfirmationDialog(String itemId) async {
   showDialog(
@@ -563,3 +591,4 @@ Future<void> showConfirmationDialog(String itemId) async {
   );
 }
 }
+  

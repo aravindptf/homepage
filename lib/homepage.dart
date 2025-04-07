@@ -15,10 +15,10 @@ class AppColors {
   // Secondary color - Soft gold for an elegant accent
   static const Color kSecondary = Color(0xFFDAAA00);
 
-  // Background color - Soft white for a clean look
+  // Background color - Soft white for a clean       
   static const Color kBackground = Color(0xFFF9F6FF);
 
-  // Card backgrounds - Pure white for contrast
+  // Card backgrounds - Pure white for contrast        v 
   static const Color kCardBackground = Colors.white;
 
   // Text colors
@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> {
       final parlourId = prefs.getInt('parlourId')?.toString();
 
       final url =
-          'http://192.168.1.200:8086/api/Items/itemByParlourId?parlourId=$parlourId';
+          'http://192.168.1.14:8086/api/Items/itemByParlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -114,7 +114,7 @@ class _HomePageState extends State<HomePage> {
       final parlourId = prefs.getInt('parlourId')?.toString();
 
       final url =
-          'http://192.168.1.200:8086/api/employees/by-parlourId?parlourId=$parlourId';
+          'http://192.168.1.14:8086/api/employees/by-parlourId?parlourId=$parlourId';
       final response = await http.get(
         Uri.parse(url),
         headers: {

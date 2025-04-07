@@ -4,31 +4,31 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AddEmployeePage extends StatefulWidget {
-  const AddEmployeePage({super.key});
+class AddnewEmployeePage extends StatefulWidget {
+  const AddnewEmployeePage({super.key});
 
   @override
-  State<AddEmployeePage> createState() => _AddEmployeePageState();
+  State<AddnewEmployeePage> createState() => _AddEmployeePageState();
 }
 
-class _AddEmployeePageState extends State<AddEmployeePage> {
+class _AddEmployeePageState extends State<AddnewEmployeePage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _parlourIdController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
 
   File? _selectedImage;
   String? _token;
+  int? _parlourId; // Store parlourId here
 
   @override
   void initState() {
     super.initState();
-    _loadToken();
+    _loadTokenAndParlourId();
   }
 
-  Future<void> _loadToken() async {
+  Future<void> _loadTokenAndParlourId() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _token = prefs.getString('authToken');
+      _parlourId = prefs.getInt('parlourId'); // Load parlourId
     });
   }
 
@@ -57,10 +57,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       _showError('Employee Name is required');
       return false;
     }
-    if (_parlourIdController.text.isEmpty) {
-      _showError('Parlour ID is required');
-      return false;
-    }
     if (_selectedImage == null) {
       _showError('Please select an employee photo');
       return false;
@@ -71,7 +67,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
  Future<void> _saveEmployeeToBackend() async {
   if (!_validateFields()) return;
 
-  final url = Uri.parse('http://192.168.1.200:8086/api/employees/addEmployee');
+  final url = Uri.parse('http://192.168.1.14:8086/api/employees/addEmployee');
   if (_token == null) {
     _showError('Token is not available. Please log in again.');
     return;
@@ -82,8 +78,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     request.headers['Authorization'] = 'Bearer $_token';
 
     request.fields['employeeName'] = _nameController.text;
-    request.fields['parlourId'] = _parlourIdController.text;
-    request.fields['phone'] = _phoneController.text;
+    request.fields['parlourId'] = _parlourId.toString(); // Use the stored parlourId
 
     if (_selectedImage != null) {
       request.files.add(await http.MultipartFile.fromPath(
@@ -96,8 +91,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     final response = await request.send();
     final responseBody = await response.stream.bytesToString();
 
-    print('Response Code: ${response.statusCode}');
-    print('Response Body: $responseBody');  // Debugging
+    print('Response Code: ${response.statusCode}'); // Debugging
+    print('Response Body: $responseBody'); // Debugging
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,12 +117,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   }
 }
 
-
   void _resetForm() {
     setState(() {
       _nameController.clear();
-      _parlourIdController.clear();
-      _phoneController.clear();
       _selectedImage = null;
     });
   }
@@ -136,13 +128,11 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    TextInputType? keyboardType,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
-        keyboardType: keyboardType,
         style: TextStyle(color: Colors.grey.shade800),
         decoration: InputDecoration(
           labelText: label,
@@ -221,7 +211,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                // ignore: deprecated_member_use
                                 color: Colors.blue.withOpacity(0.1),
                                 spreadRadius: 5,
                                 blurRadius: 7,
@@ -262,15 +251,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                         controller: _nameController,
                         label: 'Employee Name',
                         icon: Icons.person,
-                        keyboardType: TextInputType.name,
                       ),
-                      _buildInputField(
-                        controller: _parlourIdController,
-                        label: 'Parlour ID',
-                        icon: Icons.store,
-                        keyboardType: TextInputType.number,
-                      ),
-                     
                       const SizedBox(height: 32),
                       SizedBox(
                         width: double.infinity,

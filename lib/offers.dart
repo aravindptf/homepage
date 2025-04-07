@@ -75,7 +75,7 @@ class _OffersPageState extends State<Offers> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.1.200:8086/api/offer/add'),
+        Uri.parse('http://192.168.1.14:8086/api/offer/add'),
       );  
 
       request.headers['Authorization'] = 'Bearer $token';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:latlong2/latlong.dart' as latlong; // Alias for latlong2
+import 'package:latlong2/latlong.dart' as latlong;
 import 'package:geolocator/geolocator.dart';
 
 class Mappage extends StatefulWidget {
@@ -19,9 +19,8 @@ class _MappageState extends State<Mappage> {
   final bool _isLoading = false;
   String? _locationName;
   List<String> _suggestions = [];
-  String? _locationData; // To store location data from backend
-  final List<dynamic> _nearbyParlours = []; // To store nearby parlours
-
+  String? _locationData; 
+  final List<dynamic> _nearbyParlours = []; 
   @override
   void initState() {
     super.initState();
@@ -68,7 +67,7 @@ class _MappageState extends State<Mappage> {
   Future<void> _fetchLocationFromBackend(
       double latitude, double longitude) async {
     final url = Uri.parse(
-        "http://192.168.1.35:8086/user/userLocation?latitude=$latitude&longitude=$longitude");
+        "http://192.168.1.200:8086/user/userLocation?latitude=$latitude&longitude=$longitude");
 
     try {
       final response = await http.post(

@@ -68,7 +68,7 @@ class _RegisterPageState extends State<Signup> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.1.200:8086/api/parlour/ParlourReg'), // Replace with your backend URL
+        Uri.parse('http://192.168.1.14:8086/api/parlour/ParlourReg'), // Replace with your backend URL
       );
 
       // Add text fields
@@ -92,7 +92,7 @@ class _RegisterPageState extends State<Signup> {
         ));
       }
       if (_coverImage != null) {
-        request.files.add(await http.MultipartFile.fromPath(
+        request.files.add(await http.MultipartFile.fromPath( 
           'coverImage',
           _coverImage!.path,
           contentType: MediaType('image', 'jpeg'),
@@ -226,22 +226,40 @@ class _RegisterPageState extends State<Signup> {
                 }, minLines: 3, maxLines: 5),
                 Text('Select Images', style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: _buildImagePicker('Profile Image', 'profile', _image),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildImagePicker('Cover Image', 'cover', _coverImage),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildImagePicker('License Image', 'licence', _licenseImage),
-                    ),
-                  ],
-                ),
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Expanded(
+      child: Column(
+        children: [
+          _buildImagePicker('Profile Image', 'profile', _image),
+          const SizedBox(height: 5), // Space between image and text
+          Text('Profile Image', textAlign: TextAlign.center), // Text under the image
+        ],
+      ),
+    ),
+    const SizedBox(width: 10),
+    Expanded(
+      child: Column(
+        children: [
+          _buildImagePicker('Cover Image', 'cover', _coverImage),
+          const SizedBox(height: 5), // Space between image and text
+          Text('Cover Image', textAlign: TextAlign.center), // Text under the image
+        ],
+      ),
+    ),
+    const SizedBox(width: 10),
+    Expanded(
+      child: Column(
+        children: [
+          _buildImagePicker('License Image', 'licence', _licenseImage),
+          const SizedBox(height: 5), // Space between image and text
+          Text('License Image', textAlign: TextAlign.center), // Text under the image
+        ],
+      ),
+    ),
+  ],
+),
                 SizedBox(height: 40,),
                 Center(
                   child: PrimaryButton(
@@ -330,7 +348,7 @@ class _RegisterPageState extends State<Signup> {
                 MaterialPageRoute(builder: (context) => Mappage()),
               );
 
-              if (result != null) {
+              if (result != null) {  
                 setState(() {
                   _latitude = result['latitude'].toString();
                   _longitude = result['longitude'].toString();

@@ -22,16 +22,10 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
-    _loadProfileImage();
   }
 
   /// Load saved profile image path from SharedPreferences
-  Future<void> _loadProfileImage() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _profileImagePath = prefs.getString('profileImagePath');
-    });
-  }
+ 
 
   /// Pick an image from gallery and save it
   Future<void> _pickImage() async {
@@ -67,10 +61,7 @@ class _ProfileState extends State<Profile> {
           ),
           centerTitle: true,
           backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.deepPurple.shade800),
-            onPressed: () => _navigateToHomePage(context),
-          ),
+          
         ),
         body: Stack(
           children: [

@@ -1,9 +1,84 @@
-
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Subcategory model
+class Subcategory {
+  final int id;
+  final String name;
+  final String image; // Add this field if you want to use the image later
+  final int categoryId; // Add this field if you want to use the category ID
+  final String subCategoryName; // Add this field if you want to use the subcategory name
+
+  Subcategory({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.categoryId,
+    required this.subCategoryName,
+  });
+
+  factory Subcategory.fromJson(Map<String, dynamic> json) {
+    return Subcategory(
+      id: json['id'],
+      name: json['name'],
+      image: json['image'], // Assuming this is a base64 string or URL
+      categoryId: json['categoryId'],
+      subCategoryName: json['subCategoryName'],
+    );
+  }
+}
+
+// Category model
+class Category {
+  final int id;
+  final String name;
+  final String image; // Optional, if you want to use the image later
+  final String categoryName; // Optional, if you want to use the category name
+
+  Category({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.categoryName,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['id'],
+      name: json['name'],
+      image: json['image'], // Assuming this is a base64 string or URL
+      categoryName: json['categoryName'],
+    );
+  }
+}
+
+// SubSubcategory model
+class SubSubcategory {
+  final int id;
+  final String name;
+  final String image; // Optional, if you want to use the image later
+  final Subcategory subCategory; // The subcategory object
+
+  SubSubcategory({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.subCategory,
+  });
+
+  factory SubSubcategory.fromJson(Map<String, dynamic> json) {
+    return SubSubcategory(
+      id: json['id'],
+      name: json['name'],
+      image: json['image'], // Assuming this is a base64 string or URL
+      subCategory: Subcategory.fromJson(json['subCategory']),
+    );
+  }
+}
 
 class AddServicePage extends StatefulWidget {
   const AddServicePage({super.key});
@@ -17,27 +92,92 @@ class _AddServicePageState extends State<AddServicePage> {
   final TextEditingController priceController = TextEditingController();
   final TextEditingController timeController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController parlourIdController = TextEditingController();
-  final TextEditingController categoryIdController = TextEditingController();
-  final TextEditingController subcategoryController = TextEditingController();
   final TextEditingController subsubcategoryController = TextEditingController();
 
   bool isAvailable = false;
   final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
   String? _token;
+  int? _parlourId; // Store parlour ID
+
+  List<Subcategory> _subcategories = [];
+  Subcategory? _selectedSubcategory;
+
+  List<Category> _categories = [];
+  Category? _selectedCategory;
+
+  List<SubSubcategory> _subSubcategories = [];
+  SubSubcategory? _selectedSubSubcategory;
 
   @override
   void initState() {
     super.initState();
-    _loadToken();
+    _loadTokenAndParlourId();
+    _fetchSubcategories(); // Fetch subcategories when the page loads
+    _fetchCategories(); // Fetch categories when the page loads
+    _fetchSubSubcategories(); // Fetch sub-subcategories when the page loads
   }
 
-  Future<void> _loadToken() async {
+  Future<void> _loadTokenAndParlourId() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _token = prefs.getString('authToken');
+      _parlourId = prefs.getInt('parlourId'); // Load parlour ID
     });
+  }
+
+  Future<void> _fetchSubcategories() async {
+    final url = Uri.parse('http://192.168.1.20:8086/api/SubCategory/all');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _subcategories = data.map((json) => Subcategory.fromJson(json)).toList();
+          print('Fetched subcategories: $_subcategories'); // Debugging line
+        });
+      } else {
+        _showError('Failed to load subcategories');
+      }
+    } catch (e) {
+      _showError('Error: $e');
+    }
+  }
+
+  Future<void> _fetchCategories() async {
+    final url = Uri.parse('http://192.168.1.20:8086/api/Categories/all');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _categories = data.map((json) => Category.fromJson(json)).toList();
+          print('Fetched categories: $_categories'); // Debugging line
+        });
+      } else {
+        _showError('Failed to load categories');
+      }
+    } catch (e) {
+      _showError('Error: $e');
+    }
+  }
+
+  Future<void> _fetchSubSubcategories() async {
+    final url = Uri.parse('http://192.168.1.20:8086/api/SubSubCategory/all');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _subSubcategories = data.map((json) => SubSubcategory.fromJson(json)).toList();
+          print('Fetched sub-subcategories: $_subSubcategories'); // Debugging line
+        });
+      } else {
+        _showError('Failed to load sub-subcategories');
+      }
+    } catch (e) {
+      _showError('Error: $e');
+    }
   }
 
   void _showError(String message) {
@@ -66,24 +206,34 @@ class _AddServicePageState extends State<AddServicePage> {
       return false;
     }
 
-    if (parlourIdController.text.isEmpty || int.tryParse(parlourIdController.text) == null) {
-      _showError('Please enter a valid Parlour ID');
-      return false;
-    }
-
-    if (categoryIdController.text.isEmpty || int.tryParse(categoryIdController.text) == null) {
-      _showError('Please enter a valid Category ID');
+    if (_parlourId == null) {
+      _showError('Parlour ID is not available. Please log in again.');
       return false;
     }
 
     final timePattern = RegExp(r'^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$');
-    if (!timePattern.hasMatch(timeController.text)) { 
+    if (!timePattern.hasMatch(timeController.text)) {
       _showError('Please enter a valid time in hh:mm:ss format');
       return false;
     }
 
     if (_selectedImage == null) {
       _showError('Please select an image');
+      return false;
+    }
+
+    if (_selectedSubcategory == null) {
+      _showError('Please select a subcategory');
+      return false;
+    }
+
+    if (_selectedCategory == null) {
+      _showError('Please select a gender');
+      return false;
+    }
+
+    if (_selectedSubSubcategory == null) {
+      _showError('Please select a sub-subcategory');
       return false;
     }
 
@@ -100,7 +250,7 @@ class _AddServicePageState extends State<AddServicePage> {
   }
 
   Future<void> _saveServiceToBackend(Map<String, dynamic> serviceData) async {
-    final url = Uri.parse('http://192.168.1.200:8086/api/Items/AddItems');
+    final url = Uri.parse('http://192.168.1.20:8086/api/Items/AddItems');
     if (_token == null) {
       _showError('Token is not available. Please log in again.');
       return;
@@ -110,15 +260,15 @@ class _AddServicePageState extends State<AddServicePage> {
       var request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $_token';
 
-     request.fields['itemName'] = serviceData['itemName'];
-request.fields['price'] = serviceData['price']; // Ensure this is a string
-request.fields['serviceTime'] = serviceData['serviceTime']; // Ensure this is in the correct format
-request.fields['categoryId'] = serviceData['categoryId']; // Ensure this is a string
-request.fields['subCategoryId'] = serviceData['subCategoryId']; // Ensure this is a string
-request.fields['subSubCategoryId'] = serviceData['subSubCategoryId']; // Ensure this is a string
-request.fields['parlourId'] = serviceData['parlourId']; // Ensure this is a string
-request.fields['description'] = serviceData['description'];
-request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
+      request.fields['itemName'] = serviceData['itemName'];
+      request.fields['price'] = serviceData['price']; // Ensure this is a string
+      request.fields['serviceTime'] = serviceData['serviceTime']; // Ensure this is in the correct format
+      request.fields['categoryId'] = _selectedCategory!.id.toString(); // Use the selected category ID
+      request.fields['subCategoryId'] = _selectedSubcategory!.id.toString(); // Use the selected subcategory ID
+      request.fields['subSubCategoryId'] = _selectedSubSubcategory!.id.toString(); // Use the selected sub-subcategory ID
+      request.fields['parlourId'] = _parlourId.toString(); // Use the loaded parlourId
+      request.fields['description'] = serviceData['description'];
+      request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
 
       if (_selectedImage != null) {
         request.files.add(await http.MultipartFile.fromPath(
@@ -250,7 +400,6 @@ request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  // ignore: deprecated_member_use
                                   color: Colors.blue.withOpacity(0.1),
                                   spreadRadius: 5,
                                   blurRadius: 7,
@@ -313,27 +462,74 @@ request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
                         icon: Icons.description,
                         hint: 'Enter service description',
                       ),
-                      _buildInputField(
-                        controller: parlourIdController,
-                        label: 'Parlour ID',
-                        icon: Icons.store,
-                        keyboardType: TextInputType.number,
+                      // Dropdown for Category (Gender)
+                      DropdownButtonFormField<Category>(
+                        decoration: InputDecoration(
+                          labelText: 'Gender',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        value: _selectedCategory,
+                        items: _categories.map((Category category) {
+                          return DropdownMenuItem<Category>(
+                            value: category,
+                            child: Text(category.name),
+                          );
+                        }).toList(),
+                        onChanged: (Category? newValue) {
+                          setState(() {
+                            _selectedCategory = newValue;
+                          });
+                        },
+                        hint: Text('Select a gender'),
                       ),
-                      _buildInputField(
-                        controller: categoryIdController,
-                        label: 'Gender',
-                        icon: Icons.category,
-                        keyboardType: TextInputType.number,
+                      // Dropdown for Subcategory
+                      DropdownButtonFormField<Subcategory>(
+                        decoration: InputDecoration(
+                          labelText: 'Subcategory',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        value: _selectedSubcategory,
+                        items: _subcategories.map((Subcategory subcategory) {
+                          return DropdownMenuItem<Subcategory>(
+                            value: subcategory,
+                            child: Text(subcategory.name),
+                          );
+                        }).toList(),
+                        onChanged: (Subcategory? newValue) {
+                          setState(() {
+                            _selectedSubcategory = newValue;
+                          });
+                        },
+                        hint: Text('Select a subcategory'),
                       ),
-                      _buildInputField(
-                        controller: subcategoryController,
-                        label: 'Subcategory',
-                        icon: Icons.subdirectory_arrow_right,
-                      ),
-                      _buildInputField(
-                        controller: subsubcategoryController,
-                        label: 'Sub-subcategory',
-                        icon: Icons.subdirectory_arrow_right,
+                      // Dropdown for SubSubcategory
+                      DropdownButtonFormField<SubSubcategory>(
+                        decoration: InputDecoration(
+                          labelText: 'Sub-Subcategory',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        value: _selectedSubSubcategory,
+                        items: _subSubcategories.map((SubSubcategory subSubcategory) {
+                          return DropdownMenuItem<SubSubcategory>(
+                            value: subSubcategory,
+                            child: Text(subSubcategory.name),
+                          );
+                        }).toList(),
+                        onChanged: (SubSubcategory? newValue) {
+                          setState(() {
+                            _selectedSubSubcategory = newValue;
+                          });
+                        },
+                        hint: Text('Select a sub-subcategory'),
                       ),
                       const SizedBox(height: 16),
                       Container(
@@ -371,12 +567,11 @@ request.fields['availability'] = serviceData['availability'] ? 'true' : 'false';
                                 'itemName': nameController.text,
                                 'price': priceController.text,
                                 'description': descriptionController.text,
-                                'parlourId': parlourIdController.text,
                                 'availability': isAvailable,
                                 'itemImage': _selectedImage?.path,
-                                'categoryId': categoryIdController.text,
-                                'subCategoryId': subcategoryController.text,
-                                'subSubCategoryId': subsubcategoryController.text,
+                                'categoryId': _selectedCategory!.id.toString(), // Use the selected category ID
+                                'subCategoryId': _selectedSubcategory!.id.toString(), // Use the selected subcategory ID
+                                'subSubCategoryId': _selectedSubSubcategory!.id.toString(), // Use the selected sub-subcategory ID
                                 'serviceTime': timeController.text,
                               };
                               _saveServiceToBackend(serviceData);

@@ -301,7 +301,7 @@ class _OnboardingCardState extends State<OnboardingCard>
           Text(
             widget.onboarding.description,
             style: const TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w400, color: Colors.black),
+                fontSize: 14, fontWeight: FontWeight.w400,  color: Colors.black),
             textAlign: TextAlign.center,
           )
         ],
